@@ -1,0 +1,35 @@
+modLoader = "javafml"
+loaderVersion = "[47,)"
+#issueTrackerURL = ""
+license = "Apache 2.0"
+
+[[mods]]
+modId = "xcraft"
+version = "${version}"
+displayName = "xcraft"
+authors = "Pol"
+description = '''
+A Minecraft Multiplier Mod
+'''
+#logoFile = ""
+
+[[dependencies.xcraft]]
+modId = "forge"
+mandatory = true
+versionRange = "[47,)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.xcraft]]
+modId = "minecraft"
+mandatory = true
+versionRange = "[1.20.1,)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.xcraft]]
+modId = "architectury"
+mandatory = true
+versionRange = "[9.2.14,)"
+ordering = "AFTER"
+side = "BOTH"

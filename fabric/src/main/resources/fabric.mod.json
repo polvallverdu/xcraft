@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "id": "xcraft",
+  "version": "${version}",
+  "name": "xcraft",
+  "description": "A Minecraft Multiplier Mod",
+  "authors": [
+    "Pol"
+  ],
+  "contact": {
+    "homepage": "polv.dev"
+  },
+  "license": "Apache-2.0",
+  "icon": "assets/xcraft/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "dev.pov.xcraft.fabric.XcraftFabric"
+    ],
+    "client": [
+      "dev.pov.xcraft.fabric.client.XcraftFabricClient"
+    ]
+  },
+  "mixins": [
+    "xcraft.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.16.9",
+    "minecraft": "~1.20.1",
+    "java": ">=17",
+    "architectury": ">=9.2.14",
+    "fabric-api": "*"
+  },
+  "suggests": {
+    "another-mod": "*"
+  }
+}
