@@ -8,7 +8,6 @@ public class ModConfig extends MidnightConfig {
 
     @Entry(category = MULTIPLIERS_CATEGORY, min=0) public static int blockDropMultiplier = 1;
     @Entry(category = MULTIPLIERS_CATEGORY, min=0) public static int entityDropMultiplier = 1;
-    // TODO
     @Entry(category = MULTIPLIERS_CATEGORY, min=0) public static int xpMultiplier = 1;
     // TODO
     @Entry(category = MULTIPLIERS_CATEGORY, min=0) public static int furnaceSpeedMultiplier = 1;

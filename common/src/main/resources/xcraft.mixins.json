@@ -7,7 +7,8 @@
   ],
   "mixins": [
     "BlockDropMultiplierMixin",
-    "EntityDropMultiplierMixin"
+    "EntityDropMultiplierMixin",
+    "XPMultiplierMixin"
   ],
   "injectors": {
     "defaultRequire": 1
