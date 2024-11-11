@@ -6,7 +6,8 @@
   "client": [
   ],
   "mixins": [
-    "BlockDropMultiplierMixin"
+    "BlockDropMultiplierMixin",
+    "EntityDropMultiplierMixin"
   ],
   "injectors": {
     "defaultRequire": 1
