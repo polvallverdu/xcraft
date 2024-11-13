@@ -6,8 +6,10 @@
   "client": [
   ],
   "mixins": [
+    "AbstractFurnaceBlockEntityAccessor",
     "BlockDropMultiplierMixin",
     "EntityDropMultiplierMixin",
+    "FurnaceSpeedMultiplierMixin",
     "XPMultiplierMixin"
   ],
   "injectors": {
