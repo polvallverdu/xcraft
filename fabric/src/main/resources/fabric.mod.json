@@ -16,9 +16,6 @@
   "entrypoints": {
     "main": [
       "dev.pov.xcraft.fabric.XcraftFabric"
-    ],
-    "client": [
-      "dev.pov.xcraft.fabric.client.XcraftFabricClient"
     ]
   },
   "mixins": [
@@ -30,8 +27,5 @@
     "java": ">=17",
     "architectury": ">=9.2.14",
     "fabric-api": "*"
-  },
-  "suggests": {
-    "another-mod": "*"
   }
 }

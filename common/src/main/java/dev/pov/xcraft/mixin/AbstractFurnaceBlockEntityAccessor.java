@@ -18,9 +18,6 @@ import org.spongepowered.asm.mixin.gen.Invoker;
 public interface AbstractFurnaceBlockEntityAccessor {
 
     @Accessor
-    int getLitTime();
-
-    @Accessor
     int getCookingProgress();
 
     @Accessor("cookingProgress")
