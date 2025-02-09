@@ -1,6 +1,7 @@
 package dev.pov.xcraft;
 
 import dev.pov.xcraft.config.ModConfig;
+import dev.pov.xcraft.listeners.ChunkListener;
 import eu.midnightdust.lib.config.MidnightConfig;
 
 public final class Xcraft {
@@ -8,5 +9,6 @@ public final class Xcraft {
 
     public static void init() {
         MidnightConfig.init(MOD_ID, ModConfig.class);
+        ChunkListener.initializeChunkEvents();
     }
 }

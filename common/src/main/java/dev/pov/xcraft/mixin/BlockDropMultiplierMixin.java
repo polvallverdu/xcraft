@@ -2,6 +2,7 @@ package dev.pov.xcraft.mixin;
 
 import dev.pov.xcraft.Xcraft;
 import dev.pov.xcraft.config.ModConfig;
+import dev.pov.xcraft.listeners.ChunkListener;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
@@ -21,6 +22,10 @@ public class BlockDropMultiplierMixin {
 
     @Inject(method = "getDrops(Lnet/minecraft/world/level/block/state/BlockState;Lnet/minecraft/server/level/ServerLevel;Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/block/entity/BlockEntity;Lnet/minecraft/world/entity/Entity;Lnet/minecraft/world/item/ItemStack;)Ljava/util/List;", at = @At("RETURN"), cancellable = true)
     private static void injectBlockDropMultiplier(BlockState state, ServerLevel level, BlockPos pos, BlockEntity blockEntity, Entity entity, ItemStack tool, CallbackInfoReturnable<List<ItemStack>> cir) {
+        if (ChunkListener.isBlockPlaced(level, pos)) {
+            return;
+        }
+
         cir.getReturnValue().forEach(item -> item.setCount(item.getCount() * ModConfig.blockDropMultiplier));
         cir.setReturnValue(cir.getReturnValue());
     }

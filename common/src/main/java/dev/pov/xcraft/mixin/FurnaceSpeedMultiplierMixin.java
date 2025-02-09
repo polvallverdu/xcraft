@@ -1,114 +1,64 @@
 package dev.pov.xcraft.mixin;
 
+import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
+import com.llamalad7.mixinextras.sugar.Local;
+import com.llamalad7.mixinextras.sugar.ref.LocalBooleanRef;
+import dev.pov.xcraft.config.ModConfig;
 import net.minecraft.core.BlockPos;
-import net.minecraft.network.chat.Component;
-import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.AbstractCookingRecipe;
 import net.minecraft.world.item.crafting.Recipe;
-import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.AbstractFurnaceBlock;
 import net.minecraft.world.level.block.entity.*;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import org.objectweb.asm.Opcodes;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(AbstractFurnaceBlockEntity.class)
-public class FurnaceSpeedMultiplierMixin extends BaseContainerBlockEntity {
+public class FurnaceSpeedMultiplierMixin {
 
+    @Inject(method = "serverTick", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity;canBurn(Lnet/minecraft/core/RegistryAccess;Lnet/minecraft/world/item/crafting/Recipe;Lnet/minecraft/core/NonNullList;I)Z", ordinal = 1, shift = At.Shift.AFTER))
+    private static void injectCookingProgress(Level level, BlockPos pos, BlockState state, AbstractFurnaceBlockEntity blockEntity, CallbackInfo ci, @Local(name = "bl2") LocalBooleanRef bl2) {
+        AbstractFurnaceBlockEntityAccessor blockEntityAccessor = (AbstractFurnaceBlockEntityAccessor) blockEntity;
 
-    protected FurnaceSpeedMultiplierMixin(BlockEntityType<?> type, BlockPos pos, BlockState blockState) {
-        super(type, pos, blockState);
-    }
+        boolean bl3 = !(blockEntityAccessor.getItems().get(0)).isEmpty();
 
-    @Unique
-    private static boolean xcraft$isLit(AbstractFurnaceBlockEntity blockEntity) {
-        AbstractFurnaceBlockEntityAccessor accessor = (AbstractFurnaceBlockEntityAccessor) blockEntity;
-
-        return accessor.getLitTime() > 0;
-    }
-
-    @Inject(method = "serverTick", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity;isLit()Z", ordinal = 6), cancellable = true)
-    private static void onProcessMultipleTimes(Level level, BlockPos pos, BlockState state, AbstractFurnaceBlockEntity blockEntity, CallbackInfo ci) {
-        ci.cancel();
-
-        AbstractFurnaceBlockEntityAccessor accessor = (AbstractFurnaceBlockEntityAccessor) blockEntity;
-
-        Recipe recipe = accessor.getQuickCheck().getRecipeFor(blockEntity, level).orElse(null);
-        int i = blockEntity.getMaxStackSize();
-
-        if (xcraft$isLit(blockEntity) && AbstractFurnaceBlockEntityAccessor.canBurn(level.registryAccess(), recipe, accessor.getItems(), i)) {
-            accessor.setCookingProgress(accessor.getCookingProgress()+1);
-            if (accessor.getCookingProgress() == accessor.getCookingTotalTime()) {
-                accessor.setCookingProgress(0);
-                accessor.setCookingTotalTime(AbstractFurnaceBlockEntityAccessor.getTotalCookTime(level, blockEntity));
-                if (AbstractFurnaceBlockEntityAccessor.burn(level.registryAccess(), recipe, accessor.getItems(), i)) {
-                    blockEntity.setRecipeUsed(recipe);
-                }
-            }
+        Recipe<?> recipe;
+        if (bl3) {
+            recipe = blockEntityAccessor.getQuickCheck().getRecipeFor(blockEntity, level).orElse(null);
         } else {
-            accessor.setCookingProgress(0);
+            recipe = null;
         }
 
-        state = (BlockState)state.setValue(AbstractFurnaceBlock.LIT, xcraft$isLit(blockEntity));
-        level.setBlock(pos, state, 3);
+        if (!AbstractFurnaceBlockEntityAccessor.canBurn(level.registryAccess(), recipe, blockEntityAccessor.getItems(), blockEntity.getMaxStackSize())) return;
 
-        setChanged(level, pos, state);
+        int i = 0;
+
+        while (i < ModConfig.furnaceSpeedMultiplier) {
+            blockEntityAccessor.setCookingProgress(blockEntityAccessor.getCookingProgress() + 1);
+            if (blockEntityAccessor.getCookingProgress() == blockEntityAccessor.getCookingTotalTime()) {
+                blockEntityAccessor.setCookingProgress(0);
+                blockEntityAccessor.setCookingTotalTime(AbstractFurnaceBlockEntityAccessor.getTotalCookTime(level, blockEntity));
+                if (AbstractFurnaceBlockEntityAccessor.burn(level.registryAccess(), recipe, blockEntityAccessor.getItems(), i)) {
+                    blockEntity.setRecipeUsed(recipe);
+                }
+
+                bl2.set(true);
+            }
+            i++;
+        }
+
+        // we're removing one, because one will be added by the original method
+        blockEntityAccessor.setCookingProgress(blockEntityAccessor.getCookingProgress() - 1);
     }
 
-    @Override
-    protected Component getDefaultName() {
-        return null;
-    }
-
-    @Override
-    protected AbstractContainerMenu createMenu(int containerId, Inventory inventory) {
-        return null;
-    }
-
-    @Override
-    public int getContainerSize() {
-        return 0;
-    }
-
-    @Override
-    public boolean isEmpty() {
-        return false;
-    }
-
-    @Override
-    public ItemStack getItem(int slot) {
-        return null;
-    }
-
-    @Override
-    public ItemStack removeItem(int slot, int amount) {
-        return null;
-    }
-
-    @Override
-    public ItemStack removeItemNoUpdate(int slot) {
-        return null;
-    }
-
-    @Override
-    public void setItem(int slot, ItemStack stack) {
-
-    }
-
-    @Override
-    public boolean stillValid(Player player) {
-        return false;
-    }
-
-    @Override
-    public void clearContent() {
-
+    @Redirect(method = "serverTick", at = @At(value = "FIELD", target = "Lnet/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity;cookingProgress:I", opcode = Opcodes.GETFIELD, ordinal = 1))
+    private static int injected(AbstractFurnaceBlockEntity instance) {
+        AbstractFurnaceBlockEntityAccessor blockEntityAccessor = (AbstractFurnaceBlockEntityAccessor) instance;
+        return blockEntityAccessor.getCookingTotalTime()+1;
     }
 }
