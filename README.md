@@ -34,7 +34,7 @@ Speed-up your early game multiplying drops, furnace speed, and more...
 
 ### Forge
 
-*Forge support is planned. Waiting on [this issue to be solved](https://github.com/SpongePowered/Mixin/issues/688)*
+*Forge support is planned. In theory it's done, but there are some issues with mixins. I'm open to contributions.*
 
 ## License
 
