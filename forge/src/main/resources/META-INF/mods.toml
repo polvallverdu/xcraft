@@ -1,17 +1,18 @@
 modLoader = "javafml"
 loaderVersion = "[47,)"
-#issueTrackerURL = ""
+issueTrackerURL = "https://github.com/polvallverdu/xcraft"
 license = "Apache 2.0"
 
 [[mods]]
 modId = "xcraft"
 version = "${version}"
-displayName = "xcraft"
+displayName = "xCraft"
 authors = "Pol"
 description = '''
-A Minecraft Multiplier Mod
+Speed-up your early game multiplying drops, furnace speed, and more...
 '''
-#logoFile = ""
+logoFile = "assets/xcraft/icon.png"
+displayURL = "https://polv.dev"
 
 [[dependencies.xcraft]]
 modId = "forge"

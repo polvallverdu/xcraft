@@ -9,22 +9,20 @@ Speed-up your early game multiplying drops, furnace speed, and more...
 
 ## Features
 
-- **Drop Multiplier**: Multiply the drops of any block or mob.
+- **Ore Drops Multiplier**: Multiply the resources you mine.
+- **Entity Drops Multiplier**: Multiply the drops of all mobs.
 - **Furnace Speed**: Increase the speed of the furnace.
-- **XP Speed**: Increase the speed of the XP orbs.
+- **XP Multiplier**: Increase the amount of XP from the orbs.
 - *more to come soon...* (suggestions are welcome)
 
 ## Configuration
 
 - You can configure each multiplier separately
 
-## Permissions
+## Planned
 
-*Coming soon...*
-
-## Commmands
-
-*Coming soon...*
+- Permissions-based multiplier
+- Commands to change config
 
 ## Installation
 

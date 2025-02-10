@@ -1,4 +1,4 @@
-package dev.pov.xcraft.mixin;
+package dev.polv.xcraft.fabric.mixin;
 
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.RegistryAccess;

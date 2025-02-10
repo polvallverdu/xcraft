@@ -1,6 +1,6 @@
-package dev.pov.xcraft.mixin;
+package dev.polv.xcraft.mixin;
 
-import dev.pov.xcraft.config.ModConfig;
+import dev.polv.xcraft.config.ModConfig;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import org.spongepowered.asm.mixin.Mixin;

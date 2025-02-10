@@ -1,6 +1,6 @@
-package dev.pov.xcraft.fabric;
+package dev.polv.xcraft.fabric;
 
-import dev.pov.xcraft.Xcraft;
+import dev.polv.xcraft.Xcraft;
 import net.fabricmc.api.ModInitializer;
 
 public final class XcraftFabric implements ModInitializer {

@@ -1,6 +1,6 @@
-package dev.pov.xcraft.forge;
+package dev.polv.xcraft.forge;
 
-import dev.pov.xcraft.Xcraft;
+import dev.polv.xcraft.Xcraft;
 import dev.architectury.platform.forge.EventBuses;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;

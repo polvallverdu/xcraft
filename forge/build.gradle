@@ -5,6 +5,7 @@ plugins {
 loom {
     forge {
         mixinConfig "xcraft.mixins.json"
+        mixinConfig "xcraft-forge.mixins.json"
     }
 }
 

@@ -1,14 +1,13 @@
 {
   "required": true,
-  "package": "dev.polv.xcraft.mixin",
+  "package": "dev.polv.xcraft.forge.mixin",
   "compatibilityLevel": "JAVA_17",
   "minVersion": "0.8",
   "client": [
   ],
   "mixins": [
-    "BlockDropMultiplierMixin",
-    "EntityDropMultiplierMixin",
-    "XPMultiplierMixin"
+    "AbstractFurnaceBlockEntityAccessor",
+    "FurnaceSpeedMultiplierMixin"
   ],
   "injectors": {
     "defaultRequire": 1

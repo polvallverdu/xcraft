@@ -1,12 +1,13 @@
-package dev.pov.xcraft.mixin;
+package dev.polv.xcraft.mixin;
 
-import dev.pov.xcraft.Xcraft;
-import dev.pov.xcraft.config.ModConfig;
-import dev.pov.xcraft.listeners.ChunkListener;
+import dev.polv.xcraft.config.ModConfig;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -22,12 +23,12 @@ public class BlockDropMultiplierMixin {
 
     @Inject(method = "getDrops(Lnet/minecraft/world/level/block/state/BlockState;Lnet/minecraft/server/level/ServerLevel;Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/block/entity/BlockEntity;Lnet/minecraft/world/entity/Entity;Lnet/minecraft/world/item/ItemStack;)Ljava/util/List;", at = @At("RETURN"), cancellable = true)
     private static void injectBlockDropMultiplier(BlockState state, ServerLevel level, BlockPos pos, BlockEntity blockEntity, Entity entity, ItemStack tool, CallbackInfoReturnable<List<ItemStack>> cir) {
-        if (ChunkListener.isBlockPlaced(level, pos)) {
-            return;
-        }
+        ResourceLocation loc = level.registryAccess().registryOrThrow(Registries.BLOCK).getKey(state.getBlock());
 
-        cir.getReturnValue().forEach(item -> item.setCount(item.getCount() * ModConfig.blockDropMultiplier));
-        cir.setReturnValue(cir.getReturnValue());
+        if (loc != null && loc.getPath().endsWith("_ore") && !EnchantmentHelper.hasSilkTouch(tool)) {
+            cir.getReturnValue().forEach(item -> item.setCount(item.getCount() * ModConfig.oreDropMultiplier));
+            cir.setReturnValue(cir.getReturnValue());
+        }
     }
 
 }
