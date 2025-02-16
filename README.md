@@ -5,15 +5,28 @@
 Speed-up your early game multiplying drops, furnace speed, and more...
 
 [Modrinth](https://modrinth.com/project/xcraft_real) **·** [Github](https://github.com/polvallverdu/xcraft/releases)
+
 </div>
 
 ## Features
 
 - **Ore Drops Multiplier**: Multiply the resources you mine.
-- **Entity Drops Multiplier**: Multiply the drops of all mobs.
+
+  ![Ore Drops Multiplier](/.assets/V1-0003_Ore%20Drops.webm)
+
 - **Furnace Speed**: Increase the speed of the furnace.
+
+  ![Furnace Speed](/.assets/V1-0002_Furnace.webm)
+
+- **Entity Drops Multiplier**: Multiply the drops of all mobs.
+
+  ![Entity Drops Multiplier](https://github.com/polvallverdu/xcraft/raw/refs/heads/main/.assets/V1-0001_Entity%20Drops.webm)
+
 - **XP Multiplier**: Increase the amount of XP from the orbs.
-- *more to come soon...* (suggestions are welcome)
+
+  ![XP Multiplier](/.assets/V1-0006_XP%20Multiplier.webm)
+
+- _more to come soon..._ (suggestions are welcome)
 
 ## Configuration
 
@@ -34,7 +47,7 @@ Speed-up your early game multiplying drops, furnace speed, and more...
 
 ### Forge
 
-*Forge support is planned. In theory it's done, but there are some issues with mixins. I'm open to contributions.*
+_Forge support is planned. In theory it's done, but there are some issues with mixins. I'm open to contributions._
 
 ## License
 
