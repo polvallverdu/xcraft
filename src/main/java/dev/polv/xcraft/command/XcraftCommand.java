@@ -9,7 +9,9 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
+//? if >=1.16 {
 import net.minecraft.network.chat.MutableComponent;
+//?}
 //? if <1.19 {
 /*import net.minecraft.network.chat.TextComponent;
 *///?}
@@ -66,7 +68,12 @@ public final class XcraftCommand {
 			.append(text("x" + value).withStyle(value > 1 ? ChatFormatting.AQUA : ChatFormatting.WHITE)), false);
 	}
 
+	// MutableComponent arrived in 1.16; before that withStyle/append live on Component itself
+	//? if >=1.16 {
 	private static MutableComponent text(String s) {
+	//?} else {
+	/*private static Component text(String s) {
+	*///?}
 		//? if >=1.19 {
 		return Component.literal(s);
 		//?} else {
@@ -74,7 +81,7 @@ public final class XcraftCommand {
 		*///?}
 	}
 
-	private static void send(CommandSourceStack source, MutableComponent text, boolean broadcast) {
+	private static void send(CommandSourceStack source, Component text, boolean broadcast) {
 		//? if >=1.20 {
 		source.sendSuccess(() -> text, broadcast);
 		//?} else {

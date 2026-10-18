@@ -16,7 +16,7 @@ import java.nio.file.Path;
 
 public final class Xcraft {
 	public static final String MOD_ID = /*$ mod_id*/ "xcraft";
-	public static final String MOD_VERSION = /*$ mod_version*/ "2.0.0";
+	public static final String MOD_VERSION = /*$ mod_version*/ "2.1.0";
 	//? if >=1.17 {
 	public static final Logger LOGGER = LoggerFactory.getLogger("xCraft");
 	//?} else {

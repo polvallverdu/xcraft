@@ -2,7 +2,7 @@
 
     python3 smoke_prod.py --loader fabric|neoforge|forge|legacy-fabric|ornithe --mc 1.21.7 --jar build/libs/.../xcraft-...jar
 
-Installs the official server for that loader and Minecraft version (Fabric server launcher + Fabric API,
+Installs the official server for that loader and Minecraft version (Fabric server launcher,
 or the NeoForge/Forge installer), sets furnace x8 and mobs x3, then checks that a furnace smelts far faster
 than vanilla and that a killed cow drops beef in multiples of 3. Exits non-zero on failure.
 Legacy Fabric (1.7-1.13) cannot read item NBT over commands on every version, so there the mod runs with
@@ -54,11 +54,7 @@ def install_fabric(mc, root, java):
     loader = next(l["version"] for l in json.loads(get("https://meta.fabricmc.net/v2/versions/loader")) if l["stable"])
     installer = next(i["version"] for i in json.loads(get("https://meta.fabricmc.net/v2/versions/installer")) if i["stable"])
     download(f"https://meta.fabricmc.net/v2/versions/loader/{mc}/{loader}/{installer}/server/jar", root / "server.jar")
-    versions = json.loads(get(
-        "https://api.modrinth.com/v2/project/fabric-api/version?game_versions=" + urllib.request.quote(json.dumps([mc]))
-        + "&loaders=" + urllib.request.quote('["fabric"]')))
-    api = versions[0]["files"][0]
-    download(api["url"], root / "mods" / api["filename"])
+    # No Fabric API: xCraft has no dependencies on Fabric
     return [java, "-Xmx2G", "-jar", "server.jar", "nogui"]
 
 

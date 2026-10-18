@@ -7,10 +7,6 @@ stonecutter {
 	replacements.string(current.parsed >= "1.21.11") {
 		replace("ResourceLocation", "Identifier")
 	}
-	// MutableComponent arrived in 1.16; before that withStyle/append live on Component itself
-	replacements.string(current.parsed < "1.16") {
-		replace("MutableComponent", "Component")
-	}
 }
 
 platform {
@@ -19,12 +15,6 @@ platform {
 		// Covers the hotfix versions this jar is also published for (publish.additionalVersions)
 		required("minecraft") {
 			fabricLikeVersionRange = fabricMcRange()
-		}
-		// Only Fabric API's command module is used. Depend on that module's id: it is stable across every
-		// Fabric API release, while Fabric API itself was "fabric" (not "fabric-api") before 1.19.2.
-		required("fabric-api") {
-			modid = if (sc.current.parsed >= "1.19") "fabric-command-api-v2" else "fabric-command-api-v1"
-			slug("fabric-api")
 		}
 		// Optional: adds the in-game config screen when installed
 		if (hasProperty("deps.midnightlib")) optional("midnightlib") {
@@ -85,9 +75,10 @@ dependencies {
 		})
 	}
 	modImplementation("net.fabricmc:fabric-loader:${prop("deps.fabric-loader")}")
-	modImplementation("net.fabricmc.fabric-api:fabric-api:${prop("deps.fabric-api")}")
 	if (hasProperty("deps.midnightlib")) {
 		modCompileOnly("maven.modrinth:midnightlib:${prop("deps.midnightlib")}")
+		// MidnightLib itself needs Fabric API; xCraft does not
+		if (!hasProperty("noMidnightlib")) modLocalRuntime("net.fabricmc.fabric-api:fabric-api:${prop("deps.fabric-api")}")
 		// Run dev with -PnoMidnightlib to test the plain JSON config path
 		if (!hasProperty("noMidnightlib")) modLocalRuntime("maven.modrinth:midnightlib:${prop("deps.midnightlib")}")
 	}

@@ -5,10 +5,10 @@ A lightweight, server-side mod that multiplies ore drops, mob drops, XP and furn
 
 [![GitHub release](https://img.shields.io/github/v/release/polvallverdu/xcraft?logo=github&label=Release&color=1b97ad)](https://github.com/polvallverdu/xcraft/releases)
 [![License](https://img.shields.io/github/license/polvallverdu/xcraft?color=ff9a1f&label=License)](https://github.com/polvallverdu/xcraft/blob/main/LICENSE.txt)
-![Minecraft](https://img.shields.io/badge/Minecraft-1.20.1_→_26.3-3fdcdc?style=flat-square)
+![Minecraft](https://img.shields.io/badge/Minecraft-1.7.2_→_26.3-3fdcdc?style=flat-square)
 ![Fabric](https://img.shields.io/badge/Fabric-supported-dbd0b4?style=flat-square)
 ![NeoForge](https://img.shields.io/badge/NeoForge-supported-f16436?style=flat-square)
-![Forge](https://img.shields.io/badge/Forge-1.20.1-1e2d40?style=flat-square)
+![Forge](https://img.shields.io/badge/Forge-1.17.1_→_1.20.1-1e2d40?style=flat-square)
 
 ---
 
@@ -35,7 +35,7 @@ Furnaces, blast furnaces and smokers cook **×N** faster. Outputs, recipe XP and
 [Watch it in action](https://github.com/user-attachments/assets/89ecc56a-2ee7-4ffb-b339-367703afd615)
 
 
-> 💡 xCraft is **server-side only**. Install it (with MidnightLib) on a server and players can join with a plain vanilla client. It also works in singleplayer.
+> 💡 xCraft is **server-side only**. Install it on a server and players can join with a plain vanilla client. It also works in singleplayer.
 
 ## 🎮 Commands
 
@@ -50,7 +50,7 @@ All commands need operator permissions (level 2). Changes apply instantly and ar
 
 ## ⚙️ Configuration
 
-**In game:** open the mod list and click **Config** next to xCraft. On Fabric this needs [Mod Menu](https://modrinth.com/mod/modmenu); Forge and NeoForge have the button built in. The screen is provided by [MidnightLib](https://modrinth.com/mod/midnightlib).
+**In game:** open the mod list and click **Config** next to xCraft. On Fabric this needs [Mod Menu](https://modrinth.com/mod/modmenu); Forge and NeoForge have the button built in. The screen needs [MidnightLib](https://modrinth.com/mod/midnightlib) installed; without it, use the commands or the file.
 
 **On a server:** use the `/xcraft` commands above, or edit `config/xcraft.json`, which is created on first launch. Every value defaults to `1` (vanilla).
 
@@ -67,19 +67,20 @@ Config files from xCraft 1.x keep working with no changes.
 
 ## 📦 Supported versions
 
-| Minecraft      | Fabric | NeoForge | Forge |
-|----------------|:------:|:--------:|:-----:|
-| 26.3           | ✅ | ✅ |   |
-| 26.1 – 26.1.2  | ✅ | ✅ |   |
-| 1.21.11        | ✅ | ✅ |   |
-| 1.21.1         | ✅ | ✅ |   |
-| 1.20.1         | ✅ |    | ✅ |
+**Every Minecraft release from 1.7.2 to 26.3** (84 versions). Each one is booted on a real server in CI with the published jar.
 
-Every build needs [MidnightLib](https://modrinth.com/mod/midnightlib), and the Fabric builds also need [Fabric API](https://modrinth.com/mod/fabric-api).
+| Minecraft | Loaders |
+|---|---|
+| 1.20.2 → 26.3 | Fabric, NeoForge |
+| 1.17.1 → 1.20.1 | Fabric, Forge |
+| 1.14 → 1.17 | Fabric |
+| 1.7.2 → 1.13.2 | [Legacy Fabric](https://legacyfabric.net/) (1.7.x, 1.8.x, 1.9.4, 1.10.2, 1.11.2, 1.12.2, 1.13.2) or [Ornithe](https://ornithemc.net/) (1.9–1.9.3, 1.10–1.10.1, 1.11–1.11.1, 1.12–1.12.1, 1.13–1.13.1) |
+
+xCraft has **no required dependencies**: [MidnightLib](https://modrinth.com/mod/midnightlib) is optional and only adds the in-game config screen (1.17.1+).
 
 ## 📥 Installation
 
-1. Install [Fabric](https://fabricmc.net/use/), [NeoForge](https://neoforged.net/) or [Forge](https://files.minecraftforge.net/) for your Minecraft version, plus [MidnightLib](https://modrinth.com/mod/midnightlib). On Fabric, also install [Fabric API](https://modrinth.com/mod/fabric-api), and [Mod Menu](https://modrinth.com/mod/modmenu) if you want the config screen.
+1. Install the loader for your Minecraft version: [Fabric](https://fabricmc.net/use/), [NeoForge](https://neoforged.net/), [Forge](https://files.minecraftforge.net/), [Legacy Fabric](https://legacyfabric.net/) or [Ornithe](https://ornithemc.net/). Optionally add [MidnightLib](https://modrinth.com/mod/midnightlib) (and [Mod Menu](https://modrinth.com/mod/modmenu) on Fabric) for the config screen.
 2. Download the jar for your version and loader from [Modrinth](https://modrinth.com/mod/xcraft_real) or [GitHub Releases](https://github.com/polvallverdu/xcraft/releases).
 3. Drop it into your `mods/` folder (the server's folder for multiplayer) and start the game.
 

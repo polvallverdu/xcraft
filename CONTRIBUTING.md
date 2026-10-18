@@ -17,6 +17,34 @@ stonecutter.properties.toml # mod metadata + per-version dependency versions
 settings.gradle.kts         # which Minecraft version × loader combos get built
 ```
 
+## The three builds
+
+Minecraft versions before 1.14 have no Mojang mappings, so they can't share sources with the main build:
+
+| Directory | Versions | Toolchain | Mappings |
+|---|---|---|---|
+| `.` (root) | 1.14 → 26.3 | Fabric Loom, ModDevGradle (NeoForge, legacy Forge) | Mojang |
+| `legacy/` | 1.7.2 → 1.13.2 (Legacy Fabric releases) | Legacy Looming | Legacy Yarn |
+| `ornithe/` | 1.9–1.13.1 releases Legacy Fabric lacks | Fabric Loom 1.18 + Ploceus | Feather |
+
+Each is its own Gradle build with Stonecutter and its own wrapper (`cd legacy && ./gradlew ...`). They share the
+config file format and features, not code. All three take `-Pxcraft.versions=<mc>[,<mc>]` to configure only
+those versions; the root build also takes `-Pxcraft.fabricMirror` to fetch Fabric artifacts from Legacy Fabric's
+mirror when maven.fabricmc.net is down.
+
+## Testing
+
+CI ([build.yml](.github/workflows/build.yml)) builds every version in parallel and then boots **every Minecraft
+version each jar is published for** (hotfixes included) on a real server with
+[smoke_prod.py](.github/scripts/smoke_prod.py): the official Fabric/Legacy Fabric launcher, NeoForge/Forge
+installer, or an Ornithe launch profile. It sets the multipliers over RCON and checks that a furnace smelts faster
+and a killed cow's drops are multiplied (old versions run with `-Dxcraft.debug=true` and are checked through the
+debug log). The same script works locally:
+
+```bash
+python3 .github/scripts/smoke_prod.py --loader neoforge --mc 1.20.3 --jar build/libs/<version>/xcraft-...jar
+```
+
 ## Building
 
 You need **JDK 25**; Gradle downloads the older JDKs the older versions need on its own.
@@ -41,7 +69,7 @@ Version-specific code uses Stonecutter comments:
 
 ## Adding a Minecraft version
 
-Add a `match("<version>", "<loaders>")` line to `settings.gradle.kts` and a dependency table to `stonecutter.properties.toml`. Then fix whatever the compiler and mixins complain about. Forge versions up to 1.20.1 build through ModDevGradle Legacy, and NeoForge versions through ModDevGradle.
+Add a `match("<version>", "<loaders>")` line to `settings.gradle.kts` and a dependency table to `stonecutter.properties.toml`. To publish one jar for neighbouring hotfix releases, list them in `publish.additionalVersions`; CI then tests the jar on each of them. Then fix whatever the compiler and mixins complain about. Forge versions up to 1.20.1 build through ModDevGradle Legacy, and NeoForge versions through ModDevGradle.
 
 ## Artwork
 
