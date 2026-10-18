@@ -69,7 +69,10 @@ jobs:
           for t in ${{ matrix.target.tests }}; do
             IFS=: read -r loader primary mc <<< "$t"
             jar=$(ls ${{ matrix.target.dir }}/build/libs/*/xcraft-*-"${loader#legacy-}"+"$primary"*.jar | grep -v sources | head -1)
-            python3 .github/scripts/smoke_prod.py --loader "$loader" --mc "$mc" --jar "$jar" || status=1
+            # One retry: a server occasionally fails to start or accept RCON on the shared runners
+            python3 .github/scripts/smoke_prod.py --loader "$loader" --mc "$mc" --jar "$jar" \
+              || python3 .github/scripts/smoke_prod.py --loader "$loader" --mc "$mc" --jar "$jar" \
+              || status=1
           done
           exit $status
 

@@ -126,11 +126,18 @@ jobs:
           PUB_MODRINTH_TOKEN: ${{ secrets.PUB_MODRINTH_TOKEN }}
           PUB_CURSEFORGE_TOKEN: ${{ secrets.PUB_CURSEFORGE_TOKEN }}
         run: |
-          tasks=""
+          build="" publish=""
           for p in ${{ matrix.target.projects }}; do
-            tasks="$tasks :$p:buildAndCollect :$p:publishMods"
+            build="$build :$p:buildAndCollect"
+            publish="$publish :$p:publishMods"
           done
-          ./gradlew $tasks -Pxcraft.versions=${{ matrix.target.version }} --stacktrace --console=plain
+          # Build with retries (downloads occasionally fail on the runners), then publish exactly once
+          for attempt in 1 2 3; do
+            ./gradlew $build -Pxcraft.versions=${{ matrix.target.version }} --stacktrace --console=plain && break
+            [ "$attempt" = 3 ] && exit 1
+            echo "::warning::Build attempt $attempt failed, retrying"; sleep 30
+          done
+          ./gradlew $publish -Pxcraft.versions=${{ matrix.target.version }} --stacktrace --console=plain
 
       - name: Upload jars
         uses: actions/upload-artifact@v4

@@ -25,6 +25,9 @@ from pathlib import Path
 
 UA = {"User-Agent": "xcraft-ci-smoke (github.com/polvallverdu/xcraft)"}
 RCON_PORT, RCON_PASSWORD = 25575, "xcraft"
+# Vanilla 1.14-1.14.2 give command-placed furnaces no block entity, so the furnace can't be set up from RCON
+# there. The same jar's furnace hook is verified on 1.14.3 and 1.14.4.
+FURNACE_UNTESTABLE = {"1.14", "1.14.1", "1.14.2"}
 
 
 def key(v):
@@ -264,11 +267,11 @@ def main():
         ingots = int(next(g for g in ingots.groups() if g)) if ingots else 0
         beef = [int(next(g for g in m if g)) for m in re.findall(r'beef"?, [Cc]ount: (\d+)|[Cc]ount: (\d+)[^}]*beef', items)]
         # Vanilla smelts 1 item per 10 s; at x8 roughly 7 in 7 s
-        if ingots < 3:
+        if ingots < 3 and a.mc not in FURNACE_UNTESTABLE:
             raise RuntimeError(f"furnace not sped up (iron_ingot={ingots})")
         if not beef or any(b % 3 for b in beef):
             raise RuntimeError(f"mob drops not multiplied (beef={beef})")
-        ok, reason = True, f"furnace={ingots} beef={beef}"
+        ok, reason = True, f"furnace={ingots if a.mc not in FURNACE_UNTESTABLE else 'n/a (vanilla bug)'} beef={beef}"
     except StopIteration:
         pass
     except Exception as e:  # noqa: BLE001 - report any failure with the server log tail
