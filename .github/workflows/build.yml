@@ -6,9 +6,24 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
-    name: Build all versions
+  versions:
+    name: List versions
     runs-on: ubuntu-latest
+    outputs:
+      versions: ${{ steps.list.outputs.versions }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: list
+        run: echo "versions=$(python3 .github/scripts/versions.py)" >> "$GITHUB_OUTPUT"
+
+  build:
+    name: Build ${{ matrix.target.version }}
+    needs: versions
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: ${{ fromJson(needs.versions.outputs.versions) }}
 
     steps:
       - uses: actions/checkout@v4
@@ -21,12 +36,18 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
+        with:
+          # Each matrix job writes its own cache entry; only main updates it
+          cache-read-only: ${{ github.ref != 'refs/heads/main' }}
 
-      - name: Build with Gradle
-        run: ./gradlew buildAndCollect --max-workers=3 --stacktrace --console=plain
+      - name: Build
+        run: |
+          tasks=""
+          for p in ${{ matrix.target.projects }}; do tasks="$tasks :$p:buildAndCollect"; done
+          ./gradlew $tasks -Pxcraft.versions=${{ matrix.target.version }} --stacktrace --console=plain
 
-      - name: Upload artifacts
+      - name: Upload jars
         uses: actions/upload-artifact@v4
         with:
-          name: xcraft-jars
+          name: xcraft-${{ matrix.target.version }}
           path: build/libs/

@@ -20,8 +20,18 @@ plugins {
 
 stonecutter {
 	create(rootProject) {
+		// -Pxcraft.versions=1.20.1,1.21.4 limits the build to those Minecraft versions (used by the CI matrix,
+		// so each job only sets up its own Minecraft). The VCS version is always kept: it holds the active sources.
+		val vcs = "1.21.1-fabric"
+		val only = providers.gradleProperty("xcraft.versions").orNull
+			?.split(',')?.map(String::trim)?.filter(String::isNotEmpty)?.toSet()
+
 		fun match(version: String, vararg loaders: String) =
-			loaders.forEach { version("$version-$it", version).buildscript = "build.$it.gradle.kts" }
+			loaders.forEach {
+				val id = "$version-$it"
+				if (only == null || version in only || id == vcs)
+					version(id, version).buildscript = "build.$it.gradle.kts"
+			}
 
 		match("26.3", "fabric", "neoforge")
 		match("26.2", "fabric", "neoforge")
@@ -43,7 +53,7 @@ stonecutter {
 		match("1.17.1", "fabric", "forge")
 		match("1.16.5", "fabric")
 
-		vcsVersion = "1.21.1-fabric"
+		vcsVersion = vcs
 	}
 }
 

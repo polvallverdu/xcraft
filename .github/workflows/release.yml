@@ -10,12 +10,13 @@ permissions:
   contents: write
 
 jobs:
-  release:
-    name: Release
+  # Validates the tag, writes the changelog once and lists the Minecraft versions to publish.
+  prepare:
+    name: Prepare
     runs-on: ubuntu-latest
-
-    env:
-      MOD_IS_RELEASE: true
+    outputs:
+      versions: ${{ steps.list.outputs.versions }}
+      version: ${{ steps.validate.outputs.version }}
 
     steps:
       - uses: actions/checkout@v4
@@ -23,6 +24,7 @@ jobs:
           fetch-depth: 0
 
       - name: Validate tag matches version
+        id: validate
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -55,6 +57,7 @@ jobs:
             exit 1
           fi
           echo "✓ Tag matches version."
+          echo "version=$FULL_VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Prepare git-cliff
         run: |
@@ -67,6 +70,36 @@ jobs:
           args: --latest --strip header --output CHANGELOG.md
           version: 'v2.13.1'
 
+      - name: Upload changelog
+        uses: actions/upload-artifact@v4
+        with:
+          name: changelog
+          path: CHANGELOG.md
+
+      - id: list
+        run: echo "versions=$(python3 .github/scripts/versions.py)" >> "$GITHUB_OUTPUT"
+
+  # One job per Minecraft version: builds its jars and publishes them to Modrinth and CurseForge.
+  publish:
+    name: Publish ${{ matrix.target.version }}
+    needs: prepare
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: ${{ fromJson(needs.prepare.outputs.versions) }}
+
+    env:
+      MOD_IS_RELEASE: true
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download changelog
+        uses: actions/download-artifact@v4
+        with:
+          name: changelog
+
       - name: Setup JDK
         uses: actions/setup-java@v4
         with:
@@ -75,24 +108,55 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: true
 
-      - name: Build and publish
+      - name: Build and publish to Modrinth and CurseForge
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PUB_GITHUB_ENABLE: ${{ vars.PUB_GITHUB_ENABLE || 'true' }}
+          # The GitHub release is created once, by the github-release job
+          PUB_GITHUB_ENABLE: 'false'
           PUB_DRY_RUN: ${{ vars.PUB_DRY_RUN }}
           PUB_MODS_ENABLE: ${{ vars.PUB_MODS_ENABLE || 'true' }}
-          PUB_MAVEN_ENABLE: ${{ vars.PUB_MAVEN_ENABLE }}
-          PUB_MAVEN_CENTRAL_ENABLE: ${{ vars.PUB_MAVEN_CENTRAL_ENABLE }}
-          PUB_MAVEN_CENTRAL_SNAPSHOTS: ${{ vars.PUB_MAVEN_CENTRAL_SNAPSHOTS }}
           PUB_MODRINTH_STAGING: ${{ vars.PUB_MODRINTH_STAGING }}
           PUB_MODRINTH_PROJECT_ID: ${{ vars.PUB_MODRINTH_PROJECT_ID || 'v8gHddm5' }}
           PUB_CURSEFORGE_PROJECT_ID: ${{ vars.PUB_CURSEFORGE_PROJECT_ID }}
           PUB_MODRINTH_TOKEN: ${{ secrets.PUB_MODRINTH_TOKEN }}
           PUB_CURSEFORGE_TOKEN: ${{ secrets.PUB_CURSEFORGE_TOKEN }}
-          PUB_SIGNING_KEY: ${{ secrets.PUB_SIGNING_KEY }}
-          PUB_SIGNING_ID: ${{ secrets.PUB_SIGNING_ID }}
-          PUB_SIGNING_PASSWORD: ${{ secrets.PUB_SIGNING_PASSWORD }}
-          PUB_MAVEN_CENTRAL_USERNAME: ${{ secrets.PUB_MAVEN_CENTRAL_USERNAME }}
-          PUB_MAVEN_CENTRAL_PASSWORD: ${{ secrets.PUB_MAVEN_CENTRAL_PASSWORD }}
-        run: ./gradlew publishMods --max-workers=3 --no-daemon --stacktrace --console=plain
+        run: |
+          tasks=""
+          for p in ${{ matrix.target.projects }}; do
+            tasks="$tasks :$p:buildAndCollect :$p:publishMods"
+          done
+          ./gradlew $tasks -Pxcraft.versions=${{ matrix.target.version }} --stacktrace --console=plain
+
+      - name: Upload jars
+        uses: actions/upload-artifact@v4
+        with:
+          name: jars-${{ matrix.target.version }}
+          path: build/libs/**/*.jar
+
+  # Creates the GitHub release with every jar once all versions are published.
+  github-release:
+    name: GitHub release
+    needs: [ prepare, publish ]
+    if: vars.PUB_DRY_RUN != 'true' && (vars.PUB_GITHUB_ENABLE || 'true') == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download changelog and jars
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Create release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ needs.prepare.outputs.version }}
+        run: |
+          prerelease=""
+          [[ "$VERSION" == *-* ]] && prerelease="--prerelease"
+          gh release create "$GITHUB_REF_NAME" --title "xCraft $VERSION" --notes-file dist/CHANGELOG.md $prerelease \
+            $(find dist -name '*.jar' | sort)
