@@ -10,6 +10,7 @@ Legacy Fabric (1.7-1.13) cannot read item NBT over commands on every version, so
 Java is taken from JAVA_HOME_<N>_X64 (set by actions/setup-java) or JAVA_<N>_HOME, falling back to `java`.
 """
 import argparse
+import gzip
 import json
 import os
 import re
@@ -69,15 +70,27 @@ def install_legacy_fabric(mc, root, java):
     return [java, "-Xmx2G", "-Dxcraft.debug=true", "-jar", "fabric-server-launch.jar", "nogui"]
 
 
+def world_spawn(root):
+    """SpawnX/SpawnZ from level.dat (old consoles run commands at 0,0,0, which may not be loaded)."""
+    data = gzip.decompress((root / "world" / "level.dat").read_bytes())
+    def int_tag(name):
+        i = data.index(b"\x03" + struct.pack(">H", len(name)) + name.encode()) + 3 + len(name)
+        return struct.unpack(">i", data[i:i + 4])[0]
+    return int_tag("SpawnX"), int_tag("SpawnZ")
+
+
 def legacy_checks(r, mc, root):
     """Old versions: place a filled furnace and drop a cow to its death, then read xCraft's debug log."""
+    r.cmd("save-all")
+    time.sleep(2)
+    x, z = world_spawn(root)
     items = '[{Slot:0b,id:"minecraft:iron_ore",Count:16b},{Slot:1b,id:"minecraft:coal",Count:4b}]'
     if key(mc) >= [1, 13]:
-        r.cmd(f"setblock 0 5 0 minecraft:furnace{{Items:{items}}}")
+        r.cmd(f"setblock {x} 5 {z} minecraft:furnace{{Items:{items}}}")
     else:
-        r.cmd(f"setblock 0 5 0 minecraft:furnace 0 replace {{Items:{items}}}")
+        r.cmd(f"setblock {x} 5 {z} minecraft:furnace 0 replace {{Items:{items}}}")
     cow = "cow" if key(mc) >= [1, 11] else "Cow"
-    r.cmd(f"summon {cow} 3 45 3")  # dies from the fall; there are no @e selectors to /kill it before 1.8
+    r.cmd(f"summon {cow} {x + 3} 45 {z + 3}")  # dies from the fall; there are no @e selectors before 1.8
     time.sleep(15)
     log = (root / "server.log").read_text(errors="replace")
     furnace = len(re.findall(r"\[xcraft-debug\] furnace x8", log))
@@ -199,7 +212,8 @@ def main():
         r.cmd("kill @e[tag=xcraft]")
         time.sleep(7)
         furnace = r.cmd("data get block ~ ~3 ~ Items")
-        items = r.cmd("execute positioned ~ ~3 ~4 as @e[type=item,distance=..3] run data get entity @s Item")
+        # NoAI cows float where summoned; their drops fall to the ground below
+        items = r.cmd("execute positioned ~ ~1 ~4 as @e[type=item,distance=..6] run data get entity @s Item")
         r.cmd("xcraft reload")
         r.cmd("stop")
 
