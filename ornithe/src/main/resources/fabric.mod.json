@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "id": "xcraft",
+  "version": "${version}",
+  "name": "xCraft",
+  "description": "Multiply ore drops, mob drops, XP and furnace speed. Configurable, server-side.",
+  "authors": ["Pol Vallverdu"],
+  "contact": {
+    "sources": "https://github.com/polvallverdu/xcraft",
+    "issues": "https://github.com/polvallverdu/xcraft/issues",
+    "homepage": "https://modrinth.com/mod/xcraft_real"
+  },
+  "license": "Apache-2.0",
+  "icon": "assets/xcraft/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": ["dev.polv.xcraft.ornithe.OrnitheXcraft"]
+  },
+  "mixins": ["xcraft.mixins.json"],
+  "depends": {
+    "fabricloader": ">=0.15.0",
+    "minecraft": "${minecraft}"
+  }
+}

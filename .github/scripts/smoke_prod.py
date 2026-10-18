@@ -1,6 +1,6 @@
 """Boot a real dedicated server with a built xCraft jar and check the multipliers over RCON.
 
-    python3 smoke_prod.py --loader fabric|neoforge|forge|legacy-fabric --mc 1.21.7 --jar build/libs/.../xcraft-...jar
+    python3 smoke_prod.py --loader fabric|neoforge|forge|legacy-fabric|ornithe --mc 1.21.7 --jar build/libs/.../xcraft-...jar
 
 Installs the official server for that loader and Minecraft version (Fabric server launcher + Fabric API,
 or the NeoForge/Forge installer), sets furnace x8 and mobs x3, then checks that a furnace smelts far faster
@@ -79,16 +79,40 @@ def world_spawn(root):
     return int_tag("SpawnX"), int_tag("SpawnZ")
 
 
+def install_ornithe(mc, root, java):
+    """Ornithe has no server-launcher jar endpoint: build the classpath from its launch profile."""
+    profile = json.loads(get(f"https://meta.ornithemc.net/v3/versions/gen2/fabric-loader/{mc}/0.20.0/server/json"))
+    libs = root / "libraries"
+    libs.mkdir()
+    for lib in profile["libraries"]:
+        group, artifact, version = lib["name"].split(":")[:3]
+        path = f"{group.replace('.', '/')}/{artifact}/{version}/{artifact}-{version}.jar"
+        base = lib.get("url", "https://libraries.minecraft.net/").rstrip("/") + "/"
+        dest = libs / f"{artifact}-{version}.jar"
+        try:
+            download(base + path, dest)
+        except Exception:  # noqa: BLE001 - maven.fabricmc.net outages: use Legacy Fabric's mirror of it
+            download(base.replace("https://maven.fabricmc.net/", "https://repo.legacyfabric.net/fabricmc/") + path, dest)
+    manifest = json.loads(get("https://piston-meta.mojang.com/mc/game/version_manifest_v2.json"))
+    version = json.loads(get(next(v["url"] for v in manifest["versions"] if v["id"] == mc)))
+    download(version["downloads"]["server"]["url"], root / "server.jar")
+    main = profile["mainClass"]["server"] if isinstance(profile["mainClass"], dict) else profile["mainClass"]
+    return [java, "-Xmx2G", "-Dxcraft.debug=true", "-Dfabric.gameJarPath=server.jar", f"-Dfabric.gameVersion={mc}",
+            "-Dfabric.fixPackageAccess=true", "-cp", os.pathsep.join(str(p.relative_to(root)) for p in sorted(libs.glob("*.jar"))),
+            main, "nogui"]
+
+
 def legacy_checks(r, mc, root):
     """Old versions: place a filled furnace and drop a cow to its death, then read xCraft's debug log."""
     r.cmd("save-all")
     time.sleep(2)
     x, z = world_spawn(root)
-    items = '[{Slot:0b,id:"minecraft:iron_ore",Count:16b},{Slot:1b,id:"minecraft:coal",Count:4b}]'
+    # CookTimeTotal: only set when an item is inserted normally, so an NBT-placed furnace would never finish
+    nbt = 'Items:[{Slot:0b,id:"minecraft:iron_ore",Count:16b},{Slot:1b,id:"minecraft:coal",Count:4b}],CookTimeTotal:200s'
     if key(mc) >= [1, 13]:
-        r.cmd(f"setblock {x} 5 {z} minecraft:furnace{{Items:{items}}}")
+        r.cmd(f"setblock {x} 5 {z} minecraft:furnace{{{nbt}}}")
     else:
-        r.cmd(f"setblock {x} 5 {z} minecraft:furnace 0 replace {{Items:{items}}}")
+        r.cmd(f"setblock {x} 5 {z} minecraft:furnace 0 replace {{{nbt}}}")
     cow = "cow" if key(mc) >= [1, 11] else "Cow"
     r.cmd(f"summon {cow} {x + 3} 45 {z + 3}")  # dies from the fall; there are no @e selectors before 1.8
     time.sleep(15)
@@ -152,7 +176,7 @@ class Rcon:
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--loader", required=True, choices=["fabric", "neoforge", "forge", "legacy-fabric"])
+    ap.add_argument("--loader", required=True, choices=["fabric", "neoforge", "forge", "legacy-fabric", "ornithe"])
     ap.add_argument("--mc", required=True)
     ap.add_argument("--jar", required=True)
     ap.add_argument("--workdir", default="smoke-servers")
@@ -167,6 +191,8 @@ def main():
         cmd = install_fabric(a.mc, root, java)
     elif a.loader == "legacy-fabric":
         cmd = install_legacy_fabric(a.mc, root, java)
+    elif a.loader == "ornithe":
+        cmd = install_ornithe(a.mc, root, java)
     else:
         cmd = install_forge_like(a.mc, root, java, a.loader)
     shutil.copy(a.jar, root / "mods")
@@ -174,7 +200,7 @@ def main():
     (root / "server.properties").write_text(
         f"online-mode=false\nenable-rcon=true\nrcon.port={RCON_PORT}\nrcon.password={RCON_PASSWORD}\n"
         "spawn-protection=0\nbroadcast-rcon-to-ops=false\nmax-tick-time=-1\n"
-        + ("level-type=FLAT\n" if a.loader == "legacy-fabric" else ""))
+        + ("level-type=FLAT\n" if a.loader in ("legacy-fabric", "ornithe") else ""))
 
     log = open(root / "server.log", "w")
     proc = subprocess.Popen(cmd, cwd=root, stdout=log, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL)
@@ -194,7 +220,7 @@ def main():
         if "Set furnace multiplier" not in r.cmd("xcraft furnace 8"):
             raise RuntimeError("xCraft did not load (no /xcraft command)")
         r.cmd("xcraft mobs 3")
-        if a.loader == "legacy-fabric":
+        if a.loader in ("legacy-fabric", "ornithe"):
             reason = legacy_checks(r, a.mc, root)
             r.cmd("xcraft reload")
             r.cmd("stop")

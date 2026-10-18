@@ -1,7 +1,7 @@
 """Print the CI matrix: one entry per Minecraft version, for the main build and the legacy/ build.
 
 Each entry has:
-- dir: the Gradle build ("." or "legacy").
+- dir: the Gradle build (".", "legacy" or "ornithe").
 - version / projects: jobs run with -Pxcraft.versions=<version> and address tasks per project, so the
   always-included VCS project is not built again by every job.
 - tests: "<loader>:<primary mc>:<mc>" for every Minecraft version each jar is published for (its own plus
@@ -37,5 +37,10 @@ for version in versions:
     hotfixes = [v for v in legacy_props.get(f"hotfixes.{version}", "").split(",") if v]
     tests = [f"legacy-fabric:{version}:{mc}" for mc in [version, *hotfixes]]
     matrix.append({"dir": "legacy", "version": version, "projects": version, "tests": " ".join(tests)})
+
+# Ornithe build: the 1.9-1.13.1 releases Legacy Fabric lacks; one jar per version, no hotfixes
+ornithe_settings = (root / "ornithe" / "settings.gradle.kts").read_text()
+for version in re.findall(r'"(1\.\d+(?:\.\d+)?)"', re.search(r"listOf\(([^)]*)\)", ornithe_settings).group(1)):
+    matrix.append({"dir": "ornithe", "version": version, "projects": version, "tests": f"ornithe:{version}:{version}"})
 
 print(json.dumps(matrix))

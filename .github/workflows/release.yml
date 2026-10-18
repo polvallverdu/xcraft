@@ -81,7 +81,7 @@ jobs:
 
   # One job per Minecraft version: builds its jars and publishes them to Modrinth and CurseForge.
   publish:
-    name: Publish ${{ matrix.target.dir == 'legacy' && 'legacy ' || '' }}${{ matrix.target.version }}
+    name: Publish ${{ matrix.target.dir != '.' && format('{0} ', matrix.target.dir) || '' }}${{ matrix.target.version }}
     needs: prepare
     runs-on: ubuntu-latest
     strategy:
@@ -135,7 +135,7 @@ jobs:
       - name: Upload jars
         uses: actions/upload-artifact@v4
         with:
-          name: jars-${{ matrix.target.dir == 'legacy' && 'legacy-' || '' }}${{ matrix.target.version }}
+          name: jars-${{ matrix.target.dir != '.' && format('{0}-', matrix.target.dir) || '' }}${{ matrix.target.version }}
           path: ${{ matrix.target.dir }}/build/libs/**/*.jar
 
   # Creates the GitHub release with every jar once all versions are published.
