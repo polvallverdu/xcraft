@@ -35,6 +35,17 @@ url = "https://github.com/polvallverdu"
 [fabric]
 deps.fabric-loader = "0.19.5"
 
+[fabric."1.14.4"]
+deps.minecraft = "1.14.4"
+deps.fabric-api = "0.28.5+1.14"
+publish.additionalVersions = ["1.14.3", "1.14.2", "1.14.1", "1.14"]
+
+[fabric."1.15.2"]
+deps.minecraft = "1.15.2"
+deps.fabric-api = "0.28.5+1.15"
+deps.modmenu = "1.10.7"
+publish.additionalVersions = ["1.15.1", "1.15"]
+
 [fabric."1.16.5"]
 deps.minecraft = "1.16.5"
 deps.fabric-api = "0.42.0+1.16"

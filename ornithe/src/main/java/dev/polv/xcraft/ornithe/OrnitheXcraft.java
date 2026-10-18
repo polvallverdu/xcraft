@@ -19,6 +19,7 @@ public class OrnitheXcraft implements ModInitializer {
 	@Override
 	public void onInitialize() {
 		Config.init(FabricLoader.getInstance().getConfigDir().resolve("xcraft.json"));
-		LOGGER.info("xCraft {} loaded (JSON config): {}", VERSION, Config.summary());
+		// Plain concatenation: Minecraft 1.9-1.11 ship a Log4j beta without the (String, Object, Object) overload
+		LOGGER.info("xCraft " + VERSION + " loaded (JSON config): " + Config.summary());
 	}
 }

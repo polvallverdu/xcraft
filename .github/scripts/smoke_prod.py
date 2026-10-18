@@ -108,7 +108,9 @@ def legacy_checks(r, mc, root):
     time.sleep(2)
     x, z = world_spawn(root)
     # CookTimeTotal: only set when an item is inserted normally, so an NBT-placed furnace would never finish
-    nbt = 'Items:[{Slot:0b,id:"minecraft:iron_ore",Count:16b},{Slot:1b,id:"minecraft:coal",Count:4b}],CookTimeTotal:200s'
+    # Item ids in NBT are numeric before 1.8 (15 = iron ore, 263 = coal)
+    ore, coal = ('"minecraft:iron_ore"', '"minecraft:coal"') if key(mc) >= [1, 8] else ("15s", "263s")
+    nbt = f'Items:[{{Slot:0b,id:{ore},Count:16b}},{{Slot:1b,id:{coal},Count:4b}}],CookTimeTotal:200s'
     if key(mc) >= [1, 13]:
         r.cmd(f"setblock {x} 5 {z} minecraft:furnace{{{nbt}}}")
     else:
@@ -150,7 +152,15 @@ def install_forge_like(mc, root, java, loader):
 
 class Rcon:
     def __init__(self):
-        self.s = socket.create_connection(("127.0.0.1", RCON_PORT), timeout=30)
+        # The server logs "RCON running" just before it accepts connections
+        for attempt in range(30):
+            try:
+                self.s = socket.create_connection(("127.0.0.1", RCON_PORT), timeout=30)
+                break
+            except ConnectionRefusedError:
+                if attempt == 29:
+                    raise
+                time.sleep(1)
         self._send(3, RCON_PASSWORD)
 
     def _send(self, kind, body):
@@ -233,13 +243,13 @@ def main():
         r.cmd(fill.format("container.0", "iron_ore", 16))
         r.cmd(fill.format("container.1", "coal", 4))
         # Only our tagged cow and the items next to it: worlds can hold other drops (e.g. mineshaft loot)
-        r.cmd('summon cow ~ ~3 ~4 {NoAI:1b,Tags:["xcraft"]}')
+        r.cmd('summon cow ~ ~1 ~4 {NoAI:1b,Tags:["xcraft"]}')
         time.sleep(3)
         r.cmd("kill @e[tag=xcraft]")
         time.sleep(7)
         furnace = r.cmd("data get block ~ ~3 ~ Items")
-        # NoAI cows float where summoned; their drops fall to the ground below
-        items = r.cmd("execute positioned ~ ~1 ~4 as @e[type=item,distance=..6] run data get entity @s Item")
+        # NoAI cows don't fall; it stands right above the ground, so its drops land next to it
+        items = r.cmd("execute positioned ~ ~1 ~4 as @e[type=item,distance=..8] run data get entity @s Item")
         r.cmd("xcraft reload")
         r.cmd("stop")
 

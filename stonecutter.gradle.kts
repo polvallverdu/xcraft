@@ -17,5 +17,5 @@ stonecutter parameters {
 	swaps["mod_group"] = "\"${properties.get<String>("mod.group")}\";"
 	swaps["minecraft"] = "\"${current.version}\";"
 	// MidnightLib has no build for these targets; the config-screen bridge is compiled out there
-	constants["midnightlib"] = current.project !in setOf<String>("1.16.5-fabric", "1.17.1-forge", "1.18.1-fabric", "1.18.1-forge", "1.18.2-forge", "1.19.4-forge")
+	constants["midnightlib"] = current.project !in setOf<String>("1.14.4-fabric", "1.15.2-fabric", "1.16.5-fabric", "1.17.1-forge", "1.18.1-fabric", "1.18.1-forge", "1.18.2-forge", "1.19.4-forge")
 	}

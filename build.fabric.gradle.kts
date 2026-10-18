@@ -7,6 +7,10 @@ stonecutter {
 	replacements.string(current.parsed >= "1.21.11") {
 		replace("ResourceLocation", "Identifier")
 	}
+	// MutableComponent arrived in 1.16; before that withStyle/append live on Component itself
+	replacements.string(current.parsed < "1.16") {
+		replace("MutableComponent", "Component")
+	}
 }
 
 platform {
@@ -88,5 +92,5 @@ dependencies {
 		if (!hasProperty("noMidnightlib")) modLocalRuntime("maven.modrinth:midnightlib:${prop("deps.midnightlib")}")
 	}
 	// Mod Menu provides the "Config" button in dev runs; it's optional for players
-	modLocalRuntime("com.terraformersmc:modmenu:${prop("deps.modmenu")}") { isTransitive = false }
+	if (hasProperty("deps.modmenu")) modLocalRuntime("com.terraformersmc:modmenu:${prop("deps.modmenu")}") { isTransitive = false }
 }
