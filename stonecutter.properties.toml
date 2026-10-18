@@ -1,0 +1,97 @@
+loomx.loom_version = "1.19.1"
+
+[mod]
+id = "xcraft"
+name = "xCraft"
+group = "dev.polv"
+version = "2.0.0"
+channel_tag = ""
+description = "Multiply ore drops, mob drops, XP and furnace speed. Configurable, server-side, for Fabric, NeoForge & Forge."
+authors = ["Pol Vallverdu"]
+contributors = []
+inception_year = "2024"
+license.name = "Apache-2.0"
+license.url = "https://www.apache.org/licenses/LICENSE-2.0"
+license.dist = "repo"
+environment = "server_only"
+sources_url = "https://github.com/polvallverdu/xcraft"
+homepage_url = "https://modrinth.com/mod/xcraft_real"
+issues_url = "https://github.com/polvallverdu/xcraft/issues"
+discord_url = ""
+dev_jvm_args = [
+	"-XX:+IgnoreUnrecognizedVMOptions",
+	"-XX:+ShowCodeDetailsInExceptionMessages",
+	"-Dfile.encoding=UTF-8"
+]
+dev_jvm_args_mixin_debug = [
+	"-Dmixin.debug.countInjections=true"
+]
+
+[[mod.pom.developers]]
+id = "polvallverdu"
+name = "Pol Vallverdu"
+url = "https://github.com/polvallverdu"
+
+[fabric]
+deps.fabric-loader = "0.19.5"
+
+[fabric."1.20.1"]
+deps.minecraft = "1.20.1"
+deps.midnightlib = "1.9.3+1.20.1-fabric"
+deps.fabric-api = "0.92.12+1.20.1"
+deps.modmenu = "7.2.2"
+
+[fabric."1.21.1"]
+deps.minecraft = "1.21.1"
+deps.midnightlib = "1.10.0+1.21.1-fabric"
+deps.fabric-api = "0.116.17+1.21.1"
+deps.modmenu = "11.0.5"
+
+[fabric."1.21.11"]
+deps.minecraft = "1.21.11"
+deps.midnightlib = "1.10.0+1.21.11-fabric"
+deps.fabric-api = "0.141.6+1.21.11"
+deps.modmenu = "17.0.1"
+
+[fabric."26.1.2"]
+deps.minecraft = "26.1.2"
+deps.midnightlib = "1.10.0+26.1-fabric"
+deps.fabric-api = "0.155.3+26.1.2"
+deps.modmenu = "18.0.2"
+publish.additionalVersions = ["26.1.1", "26.1"]
+
+[fabric."26.3"]
+deps.minecraft = "26.3"
+deps.midnightlib = "1.10.0+26.3-fabric"
+deps.fabric-api = "0.163.0+26.3"
+deps.modmenu = "22.0.0-alpha.2"
+
+[forge]
+
+[forge."1.20.1"]
+deps.minecraft = "1.20.1"
+deps.midnightlib = "1.9.2+1.20.1-forge"
+deps.forge = "47.4.28"
+
+[neoforge]
+
+[neoforge."1.21.1"]
+deps.minecraft = "1.21.1"
+deps.midnightlib = "1.10.0+1.21.1-neoforge"
+deps.neoforge = "21.1.262"
+
+[neoforge."1.21.11"]
+deps.minecraft = "1.21.11"
+deps.midnightlib = "1.10.0+1.21.11-neoforge"
+deps.neoforge = "21.11.48"
+
+[neoforge."26.1.2"]
+deps.minecraft = "26.1.2"
+deps.midnightlib = "1.10.0+26.1-neoforge"
+deps.neoforge = "26.1.2.122"
+publish.additionalVersions = ["26.1.1", "26.1"]
+
+[neoforge."26.3"]
+deps.minecraft = "26.3"
+deps.midnightlib = "1.10.0+26.3-neoforge"
+deps.neoforge = "26.3.0.90"
