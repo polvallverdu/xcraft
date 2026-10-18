@@ -1,0 +1,13 @@
+{
+  "modmenu.descriptionTranslation.xcraft": "Speed up your early game by multiplying ore drops, mob drops, XP and furnace speed.",
+  "xcraft.midnightconfig.title": "xCraft Config",
+  "xcraft.midnightconfig.category.multipliers": "Multipliers",
+  "xcraft.midnightconfig.oreDropMultiplier": "Ore Drop Multiplier",
+  "xcraft.midnightconfig.oreDropMultiplier.tooltip": "Multiplies what ores drop when mined (Silk Touch is unaffected)",
+  "xcraft.midnightconfig.entityDropMultiplier": "Mob Drop Multiplier",
+  "xcraft.midnightconfig.entityDropMultiplier.tooltip": "Multiplies the loot dropped by mobs",
+  "xcraft.midnightconfig.xpMultiplier": "XP Multiplier",
+  "xcraft.midnightconfig.xpMultiplier.tooltip": "Multiplies the value of experience orbs",
+  "xcraft.midnightconfig.furnaceSpeedMultiplier": "Furnace Speed Multiplier",
+  "xcraft.midnightconfig.furnaceSpeedMultiplier.tooltip": "Makes furnaces, blast furnaces and smokers cook faster"
+}

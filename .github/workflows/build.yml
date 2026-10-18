@@ -1,0 +1,32 @@
+name: build
+on:
+  push:
+    branches: [ '**' ]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build all versions
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: 25
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build with Gradle
+        run: ./gradlew buildAndCollect --stacktrace --console=plain
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: xcraft-jars
+          path: build/libs/

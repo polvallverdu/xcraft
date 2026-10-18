@@ -1,0 +1,17 @@
+{
+  "package": "dev.polv.xcraft.mixin",
+  ${refmap}
+  "required": true,
+  "minVersion": "0.8",
+  "compatibilityLevel": "${java}",
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "mixins": [
+    "AbstractFurnaceBlockEntityAccessor",
+    "BlockDropMultiplierMixin",
+    "EntityDropMultiplierMixin",
+    "FurnaceSpeedMultiplierMixin",
+    "XPMultiplierMixin"
+  ]
+}
