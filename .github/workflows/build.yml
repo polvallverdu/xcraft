@@ -23,7 +23,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - name: Build with Gradle
-        run: ./gradlew buildAndCollect --stacktrace --console=plain
+        run: ./gradlew buildAndCollect --max-workers=3 --stacktrace --console=plain
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
