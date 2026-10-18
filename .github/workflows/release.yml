@@ -81,7 +81,7 @@ jobs:
 
   # One job per Minecraft version: builds its jars and publishes them to Modrinth and CurseForge.
   publish:
-    name: Publish ${{ matrix.target.version }}
+    name: Publish ${{ matrix.target.dir == 'legacy' && 'legacy ' || '' }}${{ matrix.target.version }}
     needs: prepare
     runs-on: ubuntu-latest
     strategy:
@@ -99,6 +99,8 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: changelog
+          # Both builds read the repository-root CHANGELOG.md
+          path: .
 
       - name: Setup JDK
         uses: actions/setup-java@v4
@@ -112,6 +114,7 @@ jobs:
           cache-read-only: true
 
       - name: Build and publish to Modrinth and CurseForge
+        working-directory: ${{ matrix.target.dir }}
         env:
           # The GitHub release is created once, by the github-release job
           PUB_GITHUB_ENABLE: 'false'
@@ -132,8 +135,8 @@ jobs:
       - name: Upload jars
         uses: actions/upload-artifact@v4
         with:
-          name: jars-${{ matrix.target.version }}
-          path: build/libs/**/*.jar
+          name: jars-${{ matrix.target.dir == 'legacy' && 'legacy-' || '' }}${{ matrix.target.version }}
+          path: ${{ matrix.target.dir }}/build/libs/**/*.jar
 
   # Creates the GitHub release with every jar once all versions are published.
   github-release:
