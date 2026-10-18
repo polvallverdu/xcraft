@@ -27,7 +27,7 @@ A lightweight, server-side mod that multiplies ore drops, mob drops, XP and furn
 ### Ore drops multiplier
 Every block that is an ore (`*_ore`, or tagged `c:ores` / `forge:ores`, so modded ores work too) drops **×N** its normal loot when mined. It stacks on top of Fortune, and **Silk Touch is left alone**, so you won't get stacks of ore blocks.
 
-[▶ Watch it in action](https://github.com/user-attachments/assets/5d976689-09b9-4892-acba-49f4bda2ba78)
+[Watch it in action](https://github.com/user-attachments/assets/5d976689-09b9-4892-acba-49f4bda2ba78)
 </td>
 </tr>
 <tr>
@@ -37,7 +37,7 @@ Every block that is an ore (`*_ore`, or tagged `c:ores` / `forge:ores`, so modde
 ### Mob drops multiplier
 Every mob's loot table drops **×N** items. Player inventories are never duplicated.
 
-[▶ Watch it in action](https://github.com/user-attachments/assets/36f655c1-0416-4e70-ac5b-02a376f5ecdb)
+[Watch it in action](https://github.com/user-attachments/assets/36f655c1-0416-4e70-ac5b-02a376f5ecdb)
 </td>
 </tr>
 <tr>
@@ -47,7 +47,7 @@ Every mob's loot table drops **×N** items. Player inventories are never duplica
 ### XP multiplier
 Experience orbs are worth **×N** when picked up. The boost also works with Mending repairs.
 
-[▶ Watch it in action](https://github.com/user-attachments/assets/0c60c929-d51f-460d-a582-5975fcc12a12)
+[Watch it in action](https://github.com/user-attachments/assets/0c60c929-d51f-460d-a582-5975fcc12a12)
 </td>
 </tr>
 <tr>
@@ -57,7 +57,7 @@ Experience orbs are worth **×N** when picked up. The boost also works with Mend
 ### Furnace speed multiplier
 Furnaces, blast furnaces and smokers cook **×N** faster. Outputs, recipe XP and hoppers keep working as in vanilla.
 
-[▶ Watch it in action](https://github.com/user-attachments/assets/89ecc56a-2ee7-4ffb-b339-367703afd615)
+[Watch it in action](https://github.com/user-attachments/assets/89ecc56a-2ee7-4ffb-b339-367703afd615)
 </td>
 </tr>
 </table>
