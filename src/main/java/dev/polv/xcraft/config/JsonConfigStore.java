@@ -42,7 +42,12 @@ public final class JsonConfigStore implements ConfigStore {
 	public void load() {
 		if (Files.exists(path)) {
 			try (Reader reader = Files.newBufferedReader(path)) {
+				//? if >=1.18 {
 				JsonObject json = JsonParser.parseReader(reader).getAsJsonObject();
+				//?} else {
+				/*// Gson before 2.8.6 (Minecraft <1.18) has no static parseReader
+				JsonObject json = new JsonParser().parse(reader).getAsJsonObject();
+				*///?}
 				for (Multiplier m : Multiplier.values()) {
 					JsonElement value = json.get(m.key);
 					if (value != null && value.isJsonPrimitive()) values.put(m, value.getAsInt());

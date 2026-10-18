@@ -11,10 +11,18 @@ import eu.midnightdust.lib.config.MidnightConfig;
 public class MidnightConfigStore extends MidnightConfig implements ConfigStore {
 	public static final String MULTIPLIERS = "multipliers";
 
+	//? if >=1.19.4 {
 	@Entry(category = MULTIPLIERS, min = XcraftConfig.MIN, max = XcraftConfig.MAX) public static int oreDropMultiplier = 1;
 	@Entry(category = MULTIPLIERS, min = XcraftConfig.MIN, max = XcraftConfig.MAX) public static int entityDropMultiplier = 1;
 	@Entry(category = MULTIPLIERS, min = XcraftConfig.MIN, max = XcraftConfig.MAX) public static int xpMultiplier = 1;
 	@Entry(category = MULTIPLIERS, min = XcraftConfig.MIN, max = XcraftConfig.MAX) public static int furnaceSpeedMultiplier = 1;
+	//?} else {
+	/*// MidnightLib before 1.3 has no config categories
+	@Entry(min = XcraftConfig.MIN, max = XcraftConfig.MAX) public static int oreDropMultiplier = 1;
+	@Entry(min = XcraftConfig.MIN, max = XcraftConfig.MAX) public static int entityDropMultiplier = 1;
+	@Entry(min = XcraftConfig.MIN, max = XcraftConfig.MAX) public static int xpMultiplier = 1;
+	@Entry(min = XcraftConfig.MIN, max = XcraftConfig.MAX) public static int furnaceSpeedMultiplier = 1;
+	*///?}
 
 	@Override
 	public int get(Multiplier multiplier) {

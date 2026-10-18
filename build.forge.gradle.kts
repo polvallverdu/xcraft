@@ -12,7 +12,7 @@ platform {
 		// Optional: adds the in-game config screen when installed
 		if (hasProperty("deps.midnightlib")) optional("midnightlib") {
 			slug("midnightlib")
-			forgeLikeVersionRange = "[${prop("deps.midnightlib").substringBefore('+')},)"
+			forgeLikeVersionRange = "[${prop("deps.midnightlib").substringBefore('+').substringBefore('-')},)"
 		}
 		required("forge") {
 			forgeLikeVersionRange.set("[${prop("deps.forge")},)")

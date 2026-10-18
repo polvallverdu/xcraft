@@ -123,7 +123,7 @@ abstract class ModPlatformPlugin @Inject constructor() : Plugin<Project> {
 		}
 		val generateTask = tasks.register<GenerateModManifestTask>("generateModManifest") {
 			content.set(ctx.loader.generateManifest(ctx))
-			outputFile.set(layout.buildDirectory.file("generated/modManifest/${ctx.loader.modManifestPath}"))
+			outputFile.set(layout.buildDirectory.file("generated/modManifest/${ctx.loader.modManifestPath(ctx)}"))
 		}
 
 		the<JavaPluginExtension>().sourceSets.named("main") { resources.srcDir(manifestOutputDir) }
@@ -132,7 +132,7 @@ abstract class ModPlatformPlugin @Inject constructor() : Plugin<Project> {
 
 	private fun Project.configureProcessResources(ctx: Context) {
 		val javaVersionValue = "JAVA_${ctx.javaVersion.majorVersion}"
-		val excluded = ctx.loader.excludedResources
+		val excluded = ctx.loader.excludedResources(ctx)
 		// Production Forge runs on SRG names, so its mixin config must point at the refmap from the mixin AP.
 		val refmapEntry = if (ctx.loader is Loader.Forge) "\"refmap\": \"${ctx.modId}.mixins.refmap.json\"," else ""
 		tasks.named<ProcessResources>("processResources") {

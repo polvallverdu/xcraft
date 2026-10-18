@@ -18,7 +18,7 @@ platform {
 		// Optional: adds the in-game config screen when installed
 		if (hasProperty("deps.midnightlib")) optional("midnightlib") {
 			slug("midnightlib")
-			forgeLikeVersionRange = "[${prop("deps.midnightlib").substringBefore('+')},)"
+			forgeLikeVersionRange = "[${prop("deps.midnightlib").substringBefore('+').substringBefore('-')},)"
 		}
 		required("neoforge") {
 			forgeLikeVersionRange.set("[${prop("deps.neoforge")},)")

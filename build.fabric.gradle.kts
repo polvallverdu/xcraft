@@ -22,7 +22,7 @@ platform {
 		// Optional: adds the in-game config screen when installed
 		if (hasProperty("deps.midnightlib")) optional("midnightlib") {
 			slug("midnightlib")
-			fabricLikeVersionRange = ">=${prop("deps.midnightlib").substringBefore('+')}"
+			fabricLikeVersionRange = ">=${prop("deps.midnightlib").substringBefore('+').substringBefore('-')}"
 		}
 		required("fabricloader") {
 			fabricLikeVersionRange = ">=${prop("deps.fabric-loader")}"
