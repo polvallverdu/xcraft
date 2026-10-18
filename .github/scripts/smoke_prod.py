@@ -175,7 +175,13 @@ class Rcon:
         return buf
 
     def cmd(self, c):
-        out = self._send(2, c)
+        try:
+            out = self._send(2, c)
+        except (ConnectionError, OSError):
+            # Minecraft 1.11's RCON sometimes drops the connection after a command: reconnect once
+            self.s.close()
+            self.__init__()
+            out = self._send(2, c)
         print(f"  > {c}\n    {out.strip()[:300]}")
         return out
 
@@ -235,11 +241,14 @@ def main():
             raise StopIteration
         r.cmd("forceload add ~ ~")  # 1.21.9+ no longer keeps spawn chunks loaded
         time.sleep(2)
-        r.cmd("setblock ~ ~3 ~ furnace")
-        time.sleep(1)  # 1.14-1.14.2 create the block entity a tick later
-        fill = "item replace block ~ ~3 ~ {} with {} {}" if key(a.mc) >= [1, 17] else "replaceitem block ~ ~3 ~ {} {} {}"
-        r.cmd(fill.format("container.0", "iron_ore", 16))
-        r.cmd(fill.format("container.1", "coal", 4))
+        if key(a.mc) >= [1, 17]:
+            r.cmd("setblock ~ ~3 ~ furnace")
+            r.cmd("item replace block ~ ~3 ~ container.0 with iron_ore 16")
+            r.cmd("item replace block ~ ~3 ~ container.1 with coal 4")
+        else:
+            # A plain /setblock furnace gets no block entity on 1.14-1.14.2; placing it with NBT does
+            r.cmd('setblock ~ ~3 ~ furnace{Items:[{Slot:0b,id:"minecraft:iron_ore",Count:16b},'
+                  '{Slot:1b,id:"minecraft:coal",Count:4b}],CookTimeTotal:200s}')
         # Only our tagged cow and the items next to it: worlds can hold other drops (e.g. mineshaft loot)
         r.cmd('summon cow ~ ~1 ~4 {NoAI:1b,Tags:["xcraft"]}')
         time.sleep(3)
