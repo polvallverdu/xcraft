@@ -17,7 +17,7 @@ jobs:
         run: echo "versions=$(python3 .github/scripts/versions.py)" >> "$GITHUB_OUTPUT"
 
   build:
-    name: Build ${{ matrix.target.version }}
+    name: Build ${{ matrix.target.dir == 'legacy' && 'legacy ' || '' }}${{ matrix.target.version }}
     needs: versions
     runs-on: ubuntu-latest
     strategy:
@@ -46,6 +46,7 @@ jobs:
           cache-read-only: ${{ github.ref != 'refs/heads/main' }}
 
       - name: Build
+        working-directory: ${{ matrix.target.dir }}
         run: |
           tasks=""
           for p in ${{ matrix.target.projects }}; do tasks="$tasks :$p:buildAndCollect"; done
@@ -54,15 +55,15 @@ jobs:
       - name: Upload jars
         uses: actions/upload-artifact@v4
         with:
-          name: xcraft-${{ matrix.target.version }}
-          path: build/libs/
+          name: xcraft-${{ matrix.target.dir == 'legacy' && 'legacy-' || '' }}${{ matrix.target.version }}
+          path: ${{ matrix.target.dir }}/build/libs/
 
       - name: Test on real servers
         run: |
           status=0
           for t in ${{ matrix.target.tests }}; do
             IFS=: read -r loader primary mc <<< "$t"
-            jar=$(ls build/libs/*/xcraft-*-"$loader"+"$primary"*.jar | grep -v sources | head -1)
+            jar=$(ls ${{ matrix.target.dir }}/build/libs/*/xcraft-*-"${loader#legacy-}"+"$primary"*.jar | grep -v sources | head -1)
             python3 .github/scripts/smoke_prod.py --loader "$loader" --mc "$mc" --jar "$jar" || status=1
           done
           exit $status
@@ -71,7 +72,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: server-logs-${{ matrix.target.version }}
+          name: server-logs-${{ matrix.target.dir == 'legacy' && 'legacy-' || '' }}${{ matrix.target.version }}
           path: |
             smoke-servers/*/server.log
             smoke-servers/*/crash-reports/
