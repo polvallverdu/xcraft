@@ -50,7 +50,12 @@ jobs:
         run: |
           tasks=""
           for p in ${{ matrix.target.projects }}; do tasks="$tasks :$p:buildAndCollect"; done
-          ./gradlew $tasks -Pxcraft.versions=${{ matrix.target.version }} --stacktrace --console=plain
+          # Retry: plugin/dependency downloads occasionally fail on the runners
+          for attempt in 1 2 3; do
+            ./gradlew $tasks -Pxcraft.versions=${{ matrix.target.version }} --stacktrace --console=plain && exit 0
+            echo "::warning::Build attempt $attempt failed, retrying"; sleep 30
+          done
+          exit 1
 
       - name: Upload jars
         uses: actions/upload-artifact@v4

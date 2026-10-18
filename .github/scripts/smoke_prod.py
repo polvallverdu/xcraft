@@ -206,7 +206,8 @@ def main():
     (root / "server.properties").write_text(
         f"online-mode=false\nenable-rcon=true\nrcon.port={RCON_PORT}\nrcon.password={RCON_PASSWORD}\n"
         "spawn-protection=0\nbroadcast-rcon-to-ops=false\nmax-tick-time=-1\n"
-        + ("level-type=FLAT\n" if a.loader in ("legacy-fabric", "ornithe") else ""))
+        # Flat world: random terrain near spawn (water, caves) can carry the test drops away
+        + ("level-type=minecraft:flat\n" if key(a.mc) >= [1, 19] else "level-type=FLAT\n"))
 
     log = open(root / "server.log", "w")
     proc = subprocess.Popen(cmd, cwd=root, stdout=log, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL)
@@ -235,6 +236,7 @@ def main():
         r.cmd("forceload add ~ ~")  # 1.21.9+ no longer keeps spawn chunks loaded
         time.sleep(2)
         r.cmd("setblock ~ ~3 ~ furnace")
+        time.sleep(1)  # 1.14-1.14.2 create the block entity a tick later
         fill = "item replace block ~ ~3 ~ {} with {} {}" if key(a.mc) >= [1, 17] else "replaceitem block ~ ~3 ~ {} {} {}"
         r.cmd(fill.format("container.0", "iron_ore", 16))
         r.cmd(fill.format("container.1", "coal", 4))
