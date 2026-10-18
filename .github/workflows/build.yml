@@ -28,10 +28,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup JDK
+      - name: Setup JDKs
         uses: actions/setup-java@v4
         with:
-          java-version: 25
+          # 8/17/21 run the test servers of older Minecraft versions; 25 (last = default) runs Gradle
+          java-version: |
+            8
+            17
+            21
+            25
           distribution: 'temurin'
 
       - name: Setup Gradle
@@ -51,3 +56,22 @@ jobs:
         with:
           name: xcraft-${{ matrix.target.version }}
           path: build/libs/
+
+      - name: Test on real servers
+        run: |
+          status=0
+          for t in ${{ matrix.target.tests }}; do
+            IFS=: read -r loader primary mc <<< "$t"
+            jar=$(ls build/libs/*/xcraft-*-"$loader"+"$primary"*.jar | grep -v sources | head -1)
+            python3 .github/scripts/smoke_prod.py --loader "$loader" --mc "$mc" --jar "$jar" || status=1
+          done
+          exit $status
+
+      - name: Upload server logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: server-logs-${{ matrix.target.version }}
+          path: |
+            smoke-servers/*/server.log
+            smoke-servers/*/crash-reports/

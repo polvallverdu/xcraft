@@ -12,12 +12,13 @@ stonecutter {
 platform {
 	loader = "fabric"
 	dependencies {
+		// Covers the hotfix versions this jar is also published for (publish.additionalVersions)
 		required("minecraft") {
-			fabricLikeVersionRange = prop("deps.minecraft")
+			fabricLikeVersionRange = fabricMcRange()
 		}
+		// Only the command API is used, which every Fabric API build of these versions ships
 		required("fabric-api") {
 			slug("fabric-api")
-			fabricLikeVersionRange = ">=${prop("deps.fabric-api")}"
 		}
 		// Optional: adds the in-game config screen when installed
 		if (hasProperty("deps.midnightlib")) optional("midnightlib") {
@@ -25,7 +26,7 @@ platform {
 			fabricLikeVersionRange = ">=${prop("deps.midnightlib").substringBefore('+').substringBefore('-')}"
 		}
 		required("fabricloader") {
-			fabricLikeVersionRange = ">=${prop("deps.fabric-loader")}"
+			fabricLikeVersionRange = ">=0.14.0"
 		}
 	}
 }

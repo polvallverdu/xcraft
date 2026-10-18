@@ -13,7 +13,7 @@ platform {
 	loader = "neoforge"
 	dependencies {
 		required("minecraft") {
-			forgeLikeVersionRange = prop("deps.minecraft")
+			forgeLikeVersionRange = forgeMcRange()
 		}
 		// Optional: adds the in-game config screen when installed
 		if (hasProperty("deps.midnightlib")) optional("midnightlib") {
@@ -21,7 +21,8 @@ platform {
 			forgeLikeVersionRange = "[${prop("deps.midnightlib").substringBefore('+').substringBefore('-')},)"
 		}
 		required("neoforge") {
-			forgeLikeVersionRange.set("[${prop("deps.neoforge")},)")
+			// Oldest NeoForge line among the supported Minecraft versions
+			forgeLikeVersionRange.set("[${neoForgeLine(supportedMcVersions().first())},)")
 		}
 	}
 }

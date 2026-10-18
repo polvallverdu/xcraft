@@ -7,7 +7,7 @@ platform {
 	loader = "forge"
 	dependencies {
 		required("minecraft") {
-			forgeLikeVersionRange = prop("deps.minecraft")
+			forgeLikeVersionRange = forgeMcRange()
 		}
 		// Optional: adds the in-game config screen when installed
 		if (hasProperty("deps.midnightlib")) optional("midnightlib") {
@@ -15,7 +15,8 @@ platform {
 			forgeLikeVersionRange = "[${prop("deps.midnightlib").substringBefore('+').substringBefore('-')},)"
 		}
 		required("forge") {
-			forgeLikeVersionRange.set("[${prop("deps.forge")},)")
+			// The Minecraft range above is the real constraint; Forge builds differ per Minecraft version
+			forgeLikeVersionRange.set("[0,)")
 		}
 	}
 }

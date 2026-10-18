@@ -26,7 +26,7 @@ data class FabricManifest(
 @Serializable
 data class ForgeManifest(
 	val modLoader: String = "javafml",
-	val loaderVersion: String = "[2,)",
+	val loaderVersion: String = "[1,)",
 	val license: String,
 	val issueTrackerURL: String,
 	val clientSideOnly: Boolean,
