@@ -19,7 +19,8 @@ platform {
 			slug("fabric-api")
 			fabricLikeVersionRange = ">=${prop("deps.fabric-api")}"
 		}
-		required("midnightlib") {
+		// Optional: adds the in-game config screen when installed
+		if (hasProperty("deps.midnightlib")) optional("midnightlib") {
 			slug("midnightlib")
 			fabricLikeVersionRange = ">=${prop("deps.midnightlib").substringBefore('+')}"
 		}
@@ -72,7 +73,11 @@ dependencies {
 	}
 	modImplementation("net.fabricmc:fabric-loader:${prop("deps.fabric-loader")}")
 	modImplementation("net.fabricmc.fabric-api:fabric-api:${prop("deps.fabric-api")}")
-	modImplementation("maven.modrinth:midnightlib:${prop("deps.midnightlib")}")
+	if (hasProperty("deps.midnightlib")) {
+		modCompileOnly("maven.modrinth:midnightlib:${prop("deps.midnightlib")}")
+		// Run dev with -PnoMidnightlib to test the plain JSON config path
+		if (!hasProperty("noMidnightlib")) modLocalRuntime("maven.modrinth:midnightlib:${prop("deps.midnightlib")}")
+	}
 	// Mod Menu provides the "Config" button in dev runs; it's optional for players
 	modLocalRuntime("com.terraformersmc:modmenu:${prop("deps.modmenu")}") { isTransitive = false }
 }

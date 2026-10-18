@@ -1,5 +1,6 @@
 package dev.polv.xcraft.mixin;
 
+import dev.polv.xcraft.config.Multiplier;
 import dev.polv.xcraft.config.XcraftConfig;
 import net.minecraft.core.BlockPos;
 //? if >=1.21.2 {
@@ -28,7 +29,7 @@ public abstract class FurnaceSpeedMultiplierMixin {
 	*///?} else {
 	private static void xcraft$speedUpSmelting(Level level, BlockPos pos, BlockState state, AbstractFurnaceBlockEntity furnace, CallbackInfo ci) {
 	//?}
-		int multiplier = XcraftConfig.furnaceSpeedMultiplier;
+		int multiplier = XcraftConfig.get(Multiplier.FURNACE);
 		if (multiplier <= 1) return;
 
 		AbstractFurnaceBlockEntityAccessor accessor = (AbstractFurnaceBlockEntityAccessor) furnace;

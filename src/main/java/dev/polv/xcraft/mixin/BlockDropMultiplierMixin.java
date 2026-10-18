@@ -1,6 +1,7 @@
 package dev.polv.xcraft.mixin;
 
 import dev.polv.xcraft.MultiplierUtil;
+import dev.polv.xcraft.config.Multiplier;
 import dev.polv.xcraft.config.XcraftConfig;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -46,7 +47,7 @@ public abstract class BlockDropMultiplierMixin {
 	*///?} else {
 	private static void xcraft$multiplyOreDrops(BlockState state, ServerLevel level, BlockPos pos, @Nullable BlockEntity blockEntity, @Nullable Entity entity, ItemStack tool, CallbackInfoReturnable<List<ItemStack>> cir) {
 	//?}
-		int multiplier = XcraftConfig.oreDropMultiplier;
+		int multiplier = XcraftConfig.get(Multiplier.ORES);
 		if (multiplier <= 1 || !xcraft$isOre(state)) return;
 
 		List<ItemStack> drops = cir.getReturnValue();

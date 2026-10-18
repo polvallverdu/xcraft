@@ -7,6 +7,8 @@ import net.minecraft.commands.CommandSourceStack;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.file.Path;
+
 public final class Xcraft {
 	public static final String MOD_ID = /*$ mod_id*/ "xcraft";
 	public static final String MOD_VERSION = /*$ mod_version*/ "2.0.0";
@@ -17,10 +19,13 @@ public final class Xcraft {
 
 	/**
 	 * Called once by every loader entrypoint.
+	 *
+	 * @param configDir the loader's config directory
 	 */
-	public static void init() {
-		XcraftConfig.load();
-		LOGGER.info("xCraft {} loaded: {}", MOD_VERSION, XcraftConfig.summary());
+	public static void init(Path configDir) {
+		XcraftConfig.init(configDir);
+		LOGGER.info("xCraft {} loaded ({} config): {}", MOD_VERSION,
+			XcraftConfig.usingMidnightLib() ? "MidnightLib" : "JSON", XcraftConfig.summary());
 	}
 
 	public static void registerCommands(CommandDispatcher<CommandSourceStack> dispatcher) {

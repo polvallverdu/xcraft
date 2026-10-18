@@ -1,5 +1,6 @@
 package dev.polv.xcraft.mixin;
 
+import dev.polv.xcraft.config.Multiplier;
 import dev.polv.xcraft.config.XcraftConfig;
 import net.minecraft.world.entity.ExperienceOrb;
 import org.spongepowered.asm.mixin.Mixin;
@@ -26,6 +27,6 @@ public abstract class XPMultiplierMixin {
 		index = 1
 	)
 	private int xcraft$multiplyXp(int value) {
-		return (int) Math.min(Integer.MAX_VALUE, (long) value * XcraftConfig.xpMultiplier);
+		return (int) Math.min(Integer.MAX_VALUE, (long) value * XcraftConfig.get(Multiplier.XP));
 	}
 }

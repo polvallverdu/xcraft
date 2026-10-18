@@ -16,4 +16,6 @@ stonecutter parameters {
 	swaps["mod_name"] = "\"${properties.get<String>("mod.name")}\";"
 	swaps["mod_group"] = "\"${properties.get<String>("mod.group")}\";"
 	swaps["minecraft"] = "\"${current.version}\";"
+	// MidnightLib has no build for these targets; the config-screen bridge is compiled out there
+	constants["midnightlib"] = current.project !in setOf<String>()
 	}

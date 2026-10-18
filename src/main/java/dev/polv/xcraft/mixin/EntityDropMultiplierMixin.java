@@ -1,6 +1,7 @@
 package dev.polv.xcraft.mixin;
 
 import dev.polv.xcraft.MultiplierUtil;
+import dev.polv.xcraft.config.Multiplier;
 import dev.polv.xcraft.config.XcraftConfig;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -28,7 +29,7 @@ public abstract class EntityDropMultiplierMixin {
 	)
 	private Consumer<ItemStack> xcraft$multiplyMobDrops(Consumer<ItemStack> output) {
 		if ((Object) this instanceof Player) return output;
-		int multiplier = XcraftConfig.entityDropMultiplier;
+		int multiplier = XcraftConfig.get(Multiplier.MOBS);
 		if (multiplier <= 1) return output;
 		return stack -> MultiplierUtil.multiply(stack, multiplier, output);
 	}

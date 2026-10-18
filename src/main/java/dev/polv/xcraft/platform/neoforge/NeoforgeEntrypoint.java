@@ -3,6 +3,7 @@ package dev.polv.xcraft.platform.neoforge;
 //? neoforge {
 
 /*import dev.polv.xcraft.Xcraft;
+import net.neoforged.fml.loading.FMLPaths;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
@@ -11,7 +12,7 @@ import net.neoforged.neoforge.event.RegisterCommandsEvent;
 public class NeoforgeEntrypoint {
 
 	public NeoforgeEntrypoint() {
-		Xcraft.init();
+		Xcraft.init(FMLPaths.CONFIGDIR.get());
 		NeoForge.EVENT_BUS.addListener(RegisterCommandsEvent.class, event -> Xcraft.registerCommands(event.getDispatcher()));
 	}
 }
