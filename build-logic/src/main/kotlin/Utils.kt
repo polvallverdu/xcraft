@@ -64,7 +64,10 @@ fun Project.fabricMcRange(): String = supportedMcVersions().let { v ->
 }
 
 /** (Neo)Forge maven range covering every supported version, e.g. `[1.21.6,1.21.8]`. */
-fun Project.forgeMcRange(): String = supportedMcVersions().let { "[${it.first()},${it.last()}]" }
+fun Project.forgeMcRange(): String = supportedMcVersions().let {
+	// Forge 1.17 rejects a range with identical bounds, so a single version is written as [v]
+	if (it.size == 1) "[${it.single()}]" else "[${it.first()},${it.last()}]"
+}
 
 /** NeoForge release line of a Minecraft version (1.21.6 -> 21.6, 1.21 -> 21.0, 26.1 -> 26.1). */
 fun neoForgeLine(mc: String): String {

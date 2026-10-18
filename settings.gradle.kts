@@ -4,6 +4,7 @@ pluginManagement {
 		mavenCentral()
 		gradlePluginPortal()
 		maven("https://maven.fabricmc.net/") { name = "Fabric" }
+		maven("https://repo.legacyfabric.net/fabricmc/") { name = "FabricMirror" } // fallback when maven.fabricmc.net is down
 		maven("https://maven.neoforged.net/releases/") { name = "NeoForged" }
 		maven("https://maven.kikugie.dev/snapshots") { name = "KikuGie Snapshots" }
 		maven("https://maven.kikugie.dev/releases") { name = "KikuGie Releases" }
@@ -50,6 +51,7 @@ stonecutter {
 		match("1.19.4", "fabric", "forge")
 		match("1.19.2", "fabric", "forge")
 		match("1.18.2", "fabric", "forge")
+		match("1.18.1", "fabric", "forge")
 		match("1.17.1", "fabric", "forge")
 		match("1.16.5", "fabric")
 

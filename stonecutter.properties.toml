@@ -48,12 +48,17 @@ deps.midnightlib = "0.4.4"
 deps.modmenu = "2.0.17"
 publish.additionalVersions = ["1.17"]
 
+[fabric."1.18.1"]
+deps.minecraft = "1.18.1"
+deps.fabric-api = "0.46.6+1.18"
+deps.modmenu = "3.0.1"
+publish.additionalVersions = ["1.18"]
+
 [fabric."1.18.2"]
 deps.minecraft = "1.18.2"
 deps.fabric-api = "0.77.0+1.18.2"
 deps.midnightlib = "0.4.4"
 deps.modmenu = "3.2.5"
-publish.additionalVersions = ["1.18.1", "1.18"]
 
 [fabric."1.19.2"]
 deps.minecraft = "1.19.2"
@@ -167,10 +172,14 @@ deps.modmenu = "21.0.0"
 deps.minecraft = "1.17.1"
 deps.forge = "37.1.1"
 
+[forge."1.18.1"]
+deps.minecraft = "1.18.1"
+deps.forge = "39.1.0"
+publish.additionalVersions = ["1.18"]
+
 [forge."1.18.2"]
 deps.minecraft = "1.18.2"
 deps.forge = "40.3.12"
-publish.additionalVersions = ["1.18.1", "1.18"]
 
 [forge."1.19.2"]
 deps.minecraft = "1.19.2"

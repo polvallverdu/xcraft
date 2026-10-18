@@ -16,8 +16,10 @@ platform {
 		required("minecraft") {
 			fabricLikeVersionRange = fabricMcRange()
 		}
-		// Only the command API is used, which every Fabric API build of these versions ships
+		// Only Fabric API's command module is used. Depend on that module's id: it is stable across every
+		// Fabric API release, while Fabric API itself was "fabric" (not "fabric-api") before 1.19.2.
 		required("fabric-api") {
+			modid = if (sc.current.parsed >= "1.19") "fabric-command-api-v2" else "fabric-command-api-v1"
 			slug("fabric-api")
 		}
 		// Optional: adds the in-game config screen when installed
@@ -49,6 +51,12 @@ loom {
 		jvmArguments.addAll(devJvmArgs)
 		displayName.set("Fabric Server")
 	}
+}
+
+// -Pxcraft.fabricMirror: fetch Fabric artifacts from Legacy Fabric's mirror of maven.fabricmc.net (for when it is unreachable)
+if (providers.gradleProperty("xcraft.fabricMirror").isPresent) {
+	repositories.removeIf { it is MavenArtifactRepository && it.url.host == "maven.fabricmc.net" }
+	repositories.maven("https://repo.legacyfabric.net/fabricmc/") { name = "FabricMirror" }
 }
 
 repositories {

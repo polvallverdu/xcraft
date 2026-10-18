@@ -146,6 +146,8 @@ def main():
         r = Rcon()
         r.cmd("xcraft furnace 8")
         r.cmd("xcraft mobs 3")
+        r.cmd("forceload add ~ ~")  # 1.21.9+ no longer keeps spawn chunks loaded
+        time.sleep(2)
         r.cmd("setblock ~ ~3 ~ furnace")
         fill = "item replace block ~ ~3 ~ {} with {} {}" if key(a.mc) >= [1, 17] else "replaceitem block ~ ~3 ~ {} {} {}"
         r.cmd(fill.format("container.0", "iron_ore", 16))
