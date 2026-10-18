@@ -1,5 +1,5 @@
 {
-  "modmenu.descriptionTranslation.xcraft": "Speed up your early game by multiplying ore drops, mob drops, XP and furnace speed.",
+  "modmenu.descriptionTranslation.xcraft": "Multiply ore drops, mob drops, XP and furnace speed. Configurable, server-side, for Fabric, NeoForge & Forge.",
   "xcraft.midnightconfig.title": "xCraft Config",
   "xcraft.midnightconfig.category.multipliers": "Multipliers",
   "xcraft.midnightconfig.oreDropMultiplier": "Ore Drop Multiplier",
