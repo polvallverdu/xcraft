@@ -26,7 +26,7 @@ import javax.inject.Inject
 
 abstract class ModPlatformPlugin @Inject constructor() : Plugin<Project> {
 	override fun apply(project: Project) = with(project) {
-		val inferredLoader = Loader.of(project.buildFile.name.substringAfter('.').replace(".gradle.kts", ""))
+		val inferredLoader = Loader.of(project.buildFile.name.substringAfter('.').replace(".gradle.kts", "").removeSuffix("-fg"))
 
 		val extension = extensions.create("platform", ModPlatformExtension::class.java).apply {
 			loader.convention(inferredLoader.id)
@@ -43,7 +43,9 @@ abstract class ModPlatformPlugin @Inject constructor() : Plugin<Project> {
 			}
 
 			is Loader.Forge -> {
-				extension.jarTask.convention("reobfJar")
+				// ForgeGradle builds: only 1.20.2-1.20.4 run on SRG names and need the renamed jar
+				val fg = project.buildFile.name.contains("forge-fg")
+				extension.jarTask.convention(if (!fg) "reobfJar" else if (project.sc.eval(project.sc.current.version, "<1.20.5")) "renameJar" else "jar")
 				extension.sourcesJarTask.convention("sourcesJar")
 			}
 
@@ -131,12 +133,21 @@ abstract class ModPlatformPlugin @Inject constructor() : Plugin<Project> {
 	}
 
 	private fun Project.configureProcessResources(ctx: Context) {
-		val javaVersionValue = "JAVA_${ctx.javaVersion.majorVersion}"
+		// Forge bundles older Mixin builds: 1.20.6's doesn't know JAVA_21, and 26.x's doesn't know JAVA_25
+		val mixinJava = when {
+			ctx.loader !is Loader.Forge -> ctx.javaVersion.majorVersion
+			ctx.stonecutter.eval(ctx.stonecutter.current.version, ">=26") -> "21"
+			ctx.stonecutter.eval(ctx.stonecutter.current.version, "1.20.6") -> "18"
+			else -> ctx.javaVersion.majorVersion
+		}
+		val javaVersionValue = "JAVA_$mixinJava"
 		val excluded = ctx.loader.excludedResources(ctx)
 		// Production Forge runs on SRG names, so its mixin config must point at the refmap from the mixin AP.
-		val refmapEntry = if (ctx.loader is Loader.Forge) "\"refmap\": \"${ctx.modId}.mixins.refmap.json\"," else ""
+		val refmapEntry = if (ctx.loader is Loader.Forge && ctx.stonecutter.eval(ctx.stonecutter.current.version, "<1.20.5")) "\"refmap\": \"${ctx.modId}.mixins.refmap.json\"," else ""
 		tasks.named<ProcessResources>("processResources") {
 			dependsOn(tasks.named("stonecutterGenerate"))
+			inputs.property("mixinJava", javaVersionValue)
+			inputs.property("mixinRefmap", refmapEntry)
 			filesMatching("*.mixins.json") {
 				expand("java" to javaVersionValue, "refmap" to refmapEntry)
 			}

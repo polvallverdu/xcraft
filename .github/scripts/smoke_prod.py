@@ -139,14 +139,27 @@ def install_forge_like(mc, root, java, loader):
     else:
         promos = json.loads(get("https://files.minecraftforge.net/net/minecraftforge/forge/promotions_slim.json"))["promos"]
         fv = promos.get(f"{mc}-recommended") or promos[f"{mc}-latest"]
-        version = f"{mc}-{fv}"
+        # Old builds carry a branch suffix in their Maven version (1.7.10-10.13.4.1614-1.7.10, -mc172, ...)
+        meta = get("https://maven.minecraftforge.net/net/minecraftforge/forge/maven-metadata.xml").decode()
+        versions = re.findall(r"<version>([^<]+)</version>", meta)
+        version = next((v for v in versions if v == f"{mc}-{fv}"), None) or \
+            next(v for v in versions if v.startswith(f"{mc}-{fv}-"))
         url = f"https://maven.minecraftforge.net/net/minecraftforge/forge/{version}/forge-{version}-installer.jar"
         args_glob = f"libraries/net/minecraftforge/forge/{version}/unix_args.txt"
     download(url, root / "installer.jar")
-    subprocess.run([java, "-jar", "installer.jar", "--installServer"], cwd=root, check=True,
-                   stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, timeout=900)
-    print(f"  installed {loader} {version}")
-    return [java, "-Xmx2G", "@user_jvm_args.txt", "@" + args_glob, "nogui"]
+    for attempt in range(3):
+        subprocess.run([java, "-Djava.awt.headless=true", "-jar", "installer.jar", "--installServer"], cwd=root,
+                       stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, timeout=900)
+        # Installers can report success after a failed library download: check for something to launch
+        if (root / args_glob).exists():
+            print(f"  installed {loader} {version}")
+            return [java, "-Xmx2G", "@user_jvm_args.txt", "@" + args_glob, "nogui"]
+        jars = [j for j in root.glob("forge-*.jar") if "installer" not in j.name]
+        shim = [j for j in jars if j.name.endswith("-shim.jar")]
+        if shim or jars:
+            print(f"  installed {loader} {version}")
+            return [java, "-Xmx2G", "-jar", (shim or jars)[0].name, "nogui"]
+    raise RuntimeError(f"{loader} {version} installer produced nothing to launch")
 
 
 class Rcon:

@@ -210,6 +210,63 @@ deps.forge = "47.4.28"
 deps.midnightlib = "1.9.2+1.20.1-forge"
 publish.additionalVersions = ["1.20"]
 
+[forge."1.20.2"]
+deps.minecraft = "1.20.2"
+deps.forge = "48.1.0"
+
+[forge."1.20.4"]
+deps.minecraft = "1.20.4"
+deps.forge = "49.2.13"
+publish.additionalVersions = ["1.20.3"]
+
+[forge."1.20.6"]
+deps.minecraft = "1.20.6"
+deps.forge = "50.2.14"
+
+[forge."1.21.1"]
+deps.minecraft = "1.21.1"
+deps.forge = "52.1.20"
+publish.additionalVersions = ["1.21"]
+
+[forge."1.21.3"]
+deps.minecraft = "1.21.3"
+deps.forge = "53.1.16"
+
+[forge."1.21.4"]
+deps.minecraft = "1.21.4"
+deps.forge = "54.1.22"
+
+[forge."1.21.5"]
+deps.minecraft = "1.21.5"
+deps.forge = "55.1.18"
+
+[forge."1.21.8"]
+deps.minecraft = "1.21.8"
+deps.forge = "58.1.26"
+publish.additionalVersions = ["1.21.7", "1.21.6"]
+
+[forge."1.21.10"]
+deps.minecraft = "1.21.10"
+deps.forge = "60.1.18"
+publish.additionalVersions = ["1.21.9"]
+
+[forge."1.21.11"]
+deps.minecraft = "1.21.11"
+deps.forge = "61.2.4"
+
+[forge."26.1.2"]
+deps.minecraft = "26.1.2"
+deps.forge = "64.1.5"
+publish.additionalVersions = ["26.1.1", "26.1"]
+
+[forge."26.2"]
+deps.minecraft = "26.2"
+deps.forge = "65.1.5"
+
+[forge."26.3"]
+deps.minecraft = "26.3"
+deps.forge = "66.0.13"
+
 [neoforge]
 
 [neoforge."1.20.4"]
