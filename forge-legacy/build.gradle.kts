@@ -20,7 +20,15 @@ repositories {
 		forRepository { maven("https://libraries.minecraft.net/") { name = "Minecraft" } }
 		filter { includeGroup("ca.weblite") }
 	}
+	// 1.7.2's LWJGL nightly: its POM points at a parent that was never published, so use the jars alone
+	maven("https://libraries.minecraft.net/") {
+		name = "MinecraftLwjglNightly"
+		metadataSources { artifact() }
+		content { includeVersionByRegex("org\\.lwjgl\\.lwjgl", ".*", ".*-nightly-2013.*") }
+	}
 	mavenCentral()
+	// Old Minecraft libraries that never reached Maven Central
+	maven("https://libraries.minecraft.net/") { name = "MinecraftLibraries" }
 	maven("https://maven.minecraftforge.net/") {
 		name = "Forge"
 		content { excludeGroup("net.minecraft") }
@@ -37,6 +45,8 @@ unimined.minecraft {
 		loader(forge)
 		// Run Forge's setup tools on the build JVM instead of a JDK matching each release
 		useToolchains = false
+		// Unimined assumes the old dotted AT format below 1.7.10, but Forge 1.7.2's ATs already use spaces
+		legacyATFormat = false
 	}
 	// The CI server tests boot the official Forge server instead (.github/scripts/smoke_prod.py)
 	runs { off = true }

@@ -44,9 +44,12 @@ def download(url, dest):
     return dest
 
 
-def java_for(mc):
+def java_for(mc, loader=""):
     v = key(mc)
     major = 8 if v < [1, 17] else 17 if v < [1, 20, 5] else 21 if v[0] == 1 else 25
+    # Forge 1.7.2 ships LaunchWrapper 1.9, which crashes on Java 8 (ConcurrentModificationException at launch)
+    if loader == "forge" and v < [1, 7, 10]:
+        major = 7
     for var in (f"JAVA_HOME_{major}_X64", f"JAVA_HOME_{major}_ARM64", f"JAVA_{major}_HOME"):
         if os.environ.get(var):
             return str(Path(os.environ[var]) / "bin" / "java")
@@ -103,8 +106,11 @@ def install_ornithe(mc, root, java):
 
 def legacy_checks(r, mc, root):
     """Old versions: place a filled furnace and drop a cow to its death, then read xCraft's debug log."""
-    r.cmd("save-all")
-    time.sleep(2)
+    # Only when needed: before 1.12 RCON runs commands off the server thread, and a save-all racing the chunk
+    # unloader can crash the server (ConcurrentModificationException in ChunkProviderServer, seen on 1.10.2/1.11.2)
+    if not (root / "world" / "level.dat").exists():
+        r.cmd("save-all")
+        time.sleep(2)
     x, z = world_spawn(root)
     # CookTimeTotal: only set when an item is inserted normally, so an NBT-placed furnace would never finish
     # Item ids in NBT are numeric before 1.8 (15 = iron ore, 263 = coal)
@@ -148,7 +154,8 @@ def install_forge_like(mc, root, java, loader):
         args_glob = f"libraries/net/minecraftforge/forge/{version}/unix_args.txt"
     download(url, root / "installer.jar")
     for attempt in range(3):
-        subprocess.run([java, "-Djava.awt.headless=true", "-jar", "installer.jar", "--installServer"], cwd=root,
+        # The installer always runs on the version's usual Java (Java 7 can't reach today's TLS endpoints)
+        subprocess.run([java_for(mc), "-Djava.awt.headless=true", "-jar", "installer.jar", "--installServer"], cwd=root,
                        stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, timeout=900)
         # Installers can report success after a failed library download: check for something to launch
         if (root / args_glob).exists():
@@ -219,7 +226,7 @@ def main():
     root = Path(a.workdir) / f"{a.loader}-{a.mc}"
     shutil.rmtree(root, ignore_errors=True)
     (root / "mods").mkdir(parents=True)
-    java = java_for(a.mc)
+    java = java_for(a.mc, a.loader)
     print(f"== {a.loader} {a.mc} ({java})")
     if a.loader == "fabric":
         cmd = install_fabric(a.mc, root, java)

@@ -7,7 +7,7 @@ import net.minecraft.command.ICommandSender;
 import net.minecraft.command.CommandException;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.text.TextComponentString;
-//?} else if >=1.8 {
+//?} else if >=1.8.8 {
 /*import net.minecraft.command.CommandException;
 import net.minecraft.util.ChatComponentText;
 *///?} else {
@@ -54,7 +54,7 @@ public class XcraftCommand extends CommandBase {
 			}
 		});
 	}
-	//?} else if >=1.8 {
+	//?} else if >=1.8.8 {
 	/*@Override
 	public void processCommand(final ICommandSender sender, String[] args) throws CommandException {
 		Commands.run(args, new Commands.Reply() {
@@ -73,6 +73,14 @@ public class XcraftCommand extends CommandBase {
 				reply(sender, message);
 			}
 		});
+	}
+	*///?}
+
+	//? if <1.8.8 {
+	/*// Before 1.8.8 ICommand extends the raw Comparable
+	@Override
+	public int compareTo(Object other) {
+		return getCommandName().compareTo(((net.minecraft.command.ICommand) other).getCommandName());
 	}
 	*///?}
 

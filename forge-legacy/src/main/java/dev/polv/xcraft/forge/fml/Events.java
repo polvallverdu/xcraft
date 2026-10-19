@@ -166,7 +166,7 @@ public class Events {
 	}
 
 	private static World worldOf(EntityItem item) {
-		//? if >=1.11 {
+		//? if >=1.10 {
 		return item.world;
 		//?} else {
 		/*return item.worldObj;
