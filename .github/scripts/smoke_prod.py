@@ -5,7 +5,7 @@
 Installs the official server for that loader and Minecraft version (Fabric server launcher,
 or the NeoForge/Forge installer), sets furnace x8 and mobs x3, then checks that a furnace smelts far faster
 than vanilla and that a killed cow drops beef in multiples of 3. Exits non-zero on failure.
-Legacy Fabric (1.7-1.13) cannot read item NBT over commands on every version, so there the mod runs with
+Legacy Fabric, Ornithe and Forge before 1.13 cannot read item NBT over commands on every version, so there the mod runs with
 -Dxcraft.debug=true and the test checks its debug log for the furnace and mob loot multiplications.
 Java is taken from JAVA_HOME_<N>_X64 (set by actions/setup-java) or JAVA_<N>_HOME, falling back to `java`.
 """
@@ -139,14 +139,29 @@ def install_forge_like(mc, root, java, loader):
     else:
         promos = json.loads(get("https://files.minecraftforge.net/net/minecraftforge/forge/promotions_slim.json"))["promos"]
         fv = promos.get(f"{mc}-recommended") or promos[f"{mc}-latest"]
-        version = f"{mc}-{fv}"
+        # Old builds carry a branch suffix in their Maven version (1.7.10-10.13.4.1614-1.7.10, -mc172, ...)
+        meta = get("https://maven.minecraftforge.net/net/minecraftforge/forge/maven-metadata.xml").decode()
+        versions = re.findall(r"<version>([^<]+)</version>", meta)
+        version = next((v for v in versions if v == f"{mc}-{fv}"), None) or \
+            next(v for v in versions if v.startswith(f"{mc}-{fv}-"))
         url = f"https://maven.minecraftforge.net/net/minecraftforge/forge/{version}/forge-{version}-installer.jar"
         args_glob = f"libraries/net/minecraftforge/forge/{version}/unix_args.txt"
     download(url, root / "installer.jar")
-    subprocess.run([java, "-jar", "installer.jar", "--installServer"], cwd=root, check=True,
-                   stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, timeout=900)
-    print(f"  installed {loader} {version}")
-    return [java, "-Xmx2G", "@user_jvm_args.txt", "@" + args_glob, "nogui"]
+    for attempt in range(3):
+        subprocess.run([java, "-Djava.awt.headless=true", "-jar", "installer.jar", "--installServer"], cwd=root,
+                       stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, timeout=900)
+        # Installers can report success after a failed library download: check for something to launch
+        if (root / args_glob).exists():
+            print(f"  installed {loader} {version}")
+            return [java, "-Xmx2G", "@user_jvm_args.txt", "@" + args_glob, "nogui"]
+        # Forge 1.7-1.12.1 install a "-universal" jar, 1.12.2-1.16.5 a plain one, 1.20.3 only a shim
+        jars = sorted((j for j in root.glob("forge-*.jar") if "installer" not in j.name), key=lambda j: len(j.name))
+        shim = [j for j in jars if j.name.endswith("-shim.jar")]
+        if shim or jars:
+            print(f"  installed {loader} {version}")
+            debug = ["-Dxcraft.debug=true"] if key(mc) < [1, 13] else []
+            return [java, "-Xmx2G", *debug, "-jar", (shim or jars)[0].name, "nogui"]
+    raise RuntimeError(f"{loader} {version} installer produced nothing to launch")
 
 
 class Rcon:
@@ -195,7 +210,11 @@ def main():
     ap.add_argument("--mc", required=True)
     ap.add_argument("--jar", required=True)
     ap.add_argument("--workdir", default="smoke-servers")
+    # Run several servers side by side: shifts the game and RCON ports
+    ap.add_argument("--port-offset", type=int, default=int(os.environ.get("XCRAFT_PORT_OFFSET", "0")))
     a = ap.parse_args()
+    global RCON_PORT
+    RCON_PORT += a.port_offset
 
     root = Path(a.workdir) / f"{a.loader}-{a.mc}"
     shutil.rmtree(root, ignore_errors=True)
@@ -213,7 +232,7 @@ def main():
     shutil.copy(a.jar, root / "mods")
     (root / "eula.txt").write_text("eula=true\n")
     (root / "server.properties").write_text(
-        f"online-mode=false\nenable-rcon=true\nrcon.port={RCON_PORT}\nrcon.password={RCON_PASSWORD}\n"
+        f"online-mode=false\nserver-port={25565 + a.port_offset}\nenable-rcon=true\nrcon.port={RCON_PORT}\nrcon.password={RCON_PASSWORD}\n"
         "spawn-protection=0\nbroadcast-rcon-to-ops=false\nmax-tick-time=-1\n"
         # Flat world: random terrain near spawn (water, caves) can carry the test drops away
         + ("level-type=minecraft:flat\n" if key(a.mc) >= [1, 19] else "level-type=FLAT\n"))
@@ -236,7 +255,8 @@ def main():
         if "Set furnace multiplier" not in r.cmd("xcraft furnace 8"):
             raise RuntimeError("xCraft did not load (no /xcraft command)")
         r.cmd("xcraft mobs 3")
-        if a.loader in ("legacy-fabric", "ornithe"):
+        # Forge before 1.13 has the same old commands and no item NBT readout: use the debug log as well
+        if a.loader in ("legacy-fabric", "ornithe") or (a.loader == "forge" and key(a.mc) < [1, 13]):
             reason = legacy_checks(r, a.mc, root)
             r.cmd("xcraft reload")
             r.cmd("stop")

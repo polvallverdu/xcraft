@@ -1,0 +1,27 @@
+modLoader = "javafml"
+loaderVersion = "[${forge_major},)"
+license = "Apache-2.0"
+issueTrackerURL = "https://github.com/polvallverdu/xcraft/issues"
+
+[[mods]]
+modId = "xcraft"
+version = "${version}"
+displayName = "xCraft"
+displayURL = "https://modrinth.com/mod/xcraft_real"
+logoFile = "assets/xcraft/icon.png"
+authors = "Pol Vallverdu"
+description = "Multiply ore drops, mob drops, XP and furnace speed. Configurable, server-side."
+
+[[dependencies.xcraft]]
+modId = "forge"
+mandatory = true
+versionRange = "[${forge_major},)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.xcraft]]
+modId = "minecraft"
+mandatory = true
+versionRange = "[${minecraft}]"
+ordering = "NONE"
+side = "BOTH"
