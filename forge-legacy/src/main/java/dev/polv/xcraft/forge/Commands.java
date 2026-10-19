@@ -14,11 +14,22 @@ public final class Commands {
 		void send(String message);
 	}
 
+	/** The loader-specific {@code /xcraft test} (see SelfTest); only used with -Dxcraft.debug=true. */
+	public interface Test {
+		String run();
+	}
+
+	public static Test selfTest;
+
 	/** Runs the command; sends feedback through {@code reply}. */
 	public static void run(String[] args, Reply reply) {
 		if (args.length == 0) {
 			reply.send(GOLD + "xCraft multipliers");
 			for (int i = 0; i < Config.MULTIPLIERS.length; i++) reply.send(line(i));
+			return;
+		}
+		if (args.length == 1 && args[0].equals("test") && Xcraft.DEBUG && selfTest != null) {
+			reply.send(ServerThread.call(selfTest));
 			return;
 		}
 		if (args.length == 1 && args[0].equals("reload")) {

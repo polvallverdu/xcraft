@@ -1,5 +1,6 @@
 package dev.polv.xcraft.forge.ml;
 
+import dev.polv.xcraft.forge.Commands;
 import dev.polv.xcraft.forge.Xcraft;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.ExtensionPoint;
@@ -16,6 +17,7 @@ public class XcraftMod {
 	public XcraftMod() {
 		Xcraft.init(FMLPaths.CONFIGDIR.get());
 		MinecraftForge.EVENT_BUS.register(new Events());
+		if (Xcraft.DEBUG) Commands.selfTest = new SelfTest();
 		// Server-side only: vanilla clients and clients without xCraft may join (mods.toml has no displayTest yet)
 		ModLoadingContext.get().registerExtensionPoint(ExtensionPoint.DISPLAYTEST,
 			() -> Pair.of(() -> FMLNetworkConstants.IGNORESERVERONLY, (remote, isServer) -> true));

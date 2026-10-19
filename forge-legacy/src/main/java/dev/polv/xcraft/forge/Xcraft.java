@@ -1,29 +1,58 @@
 package dev.polv.xcraft.forge;
 
+//? if >=1.7 {
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+//?} else {
+/*import java.util.logging.Level;
+import java.util.logging.Logger;
+*///?}
 
 import java.nio.file.Path;
 
-/** Shared state of xCraft for Forge 1.7.2 - 1.16.5. The loader entrypoint is XcraftMod (fml/ or ml/). */
+/** Shared state of xCraft for Forge 1.3.2 - 1.16.5. The loader entrypoint is XcraftMod (ancient/, fml/ or ml/). */
 public final class Xcraft {
 	public static final String MOD_ID = "xcraft";
 	public static final String VERSION = "2.1.0";
-	public static final Logger LOGGER = LogManager.getLogger("xCraft");
-	/** -Dxcraft.debug=true logs every multiplication (used by the CI server tests: old versions can't read item NBT). */
+	// Minecraft ships Log4j from 1.7; before that the server logs through java.util.logging
+	//? if >=1.7 {
+	private static final Logger LOGGER = LogManager.getLogger("xCraft");
+	//?} else {
+	/*private static final Logger LOGGER = logger();
+
+	/^* FML prints only its own logger's records: log through it (records keep the xCraft name). ^/
+	private static Logger logger() {
+		Logger logger = Logger.getLogger("xCraft");
+		logger.setParent(Logger.getLogger("ForgeModLoader"));
+		return logger;
+	}
+	*///?}
+	/** -Dxcraft.debug=true logs every multiplication and enables /xcraft test (used by the CI server tests). */
 	public static final boolean DEBUG = Boolean.getBoolean("xcraft.debug");
 
 	private Xcraft() {
 	}
 
+	public static void info(String message) {
+		LOGGER.info(message);
+	}
+
+	public static void error(String message, Throwable error) {
+		//? if >=1.7 {
+		LOGGER.error(message, error);
+		//?} else {
+		/*LOGGER.log(Level.SEVERE, message, error);
+		*///?}
+	}
+
 	public static void debug(String message) {
-		if (DEBUG) LOGGER.info("[xcraft-debug] " + message);
+		if (DEBUG) info("[xcraft-debug] " + message);
 	}
 
 	public static void init(Path configDir) {
 		Config.init(configDir.resolve("xcraft.json"));
 		// Plain concatenation: Minecraft 1.9-1.11 ship a Log4j beta without the (String, Object, Object) overload
-		LOGGER.info("xCraft " + VERSION + " loaded (JSON config): " + Config.summary());
+		info("xCraft " + VERSION + " loaded (JSON config): " + Config.summary());
 	}
 
 	/**

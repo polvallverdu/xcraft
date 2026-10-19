@@ -1,16 +1,20 @@
 package dev.polv.xcraft.forge.fml;
 
 import dev.polv.xcraft.forge.Config;
+import dev.polv.xcraft.forge.ServerThread;
+import dev.polv.xcraft.forge.TestCapture;
 import dev.polv.xcraft.forge.Xcraft;
 import net.minecraft.block.Block;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.init.Items;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.tileentity.TileEntityFurnace;
 import net.minecraft.world.World;
+import net.minecraftforge.event.entity.EntityJoinWorldEvent;
 import net.minecraftforge.event.entity.living.LivingDropsEvent;
 import net.minecraftforge.event.entity.player.PlayerPickupXpEvent;
 import net.minecraftforge.event.world.BlockEvent;
@@ -110,6 +114,26 @@ public class Events {
 		drops.addAll(extra);
 	}
 
+	/** /xcraft test: records the item entities its scenarios drop (after xCraft multiplied them). */
+	@SubscribeEvent(priority = EventPriority.LOWEST)
+	public void onJoinWorld(EntityJoinWorldEvent event) {
+		//? if >=1.9 {
+		Object entity = event.getEntity();
+		//?} else {
+		/*Object entity = event.entity;
+		*///?}
+		if (!TestCapture.active() || !(entity instanceof EntityItem)) return;
+		ItemStack stack = itemOf((EntityItem) entity);
+		if (empty(stack)) return;
+		//? if >=1.9 {
+		Item beef = Items.BEEF, leather = Items.LEATHER;
+		//?} else {
+		/*Item beef = Items.beef, leather = Items.leather;
+		*///?}
+		Item item = stack.getItem();
+		TestCapture.record(item == beef ? TestCapture.BEEF : item == leather ? TestCapture.LEATHER : TestCapture.OTHER, count(stack));
+	}
+
 	/** XP: Forge's access transformer makes the orb's value public on every version. */
 	@SubscribeEvent(priority = EventPriority.LOW)
 	public void onPickupXp(PlayerPickupXpEvent event) {
@@ -125,7 +149,9 @@ public class Events {
 	@SubscribeEvent
 	public void onWorldTick(TickEvent.WorldTickEvent event) {
 		World world = event.world;
-		if (event.phase != TickEvent.Phase.END || world.isRemote || Config.furnace() <= 1) return;
+		if (event.phase != TickEvent.Phase.END || world.isRemote) return;
+		if (Xcraft.DEBUG) ServerThread.tick();
+		if (Config.furnace() <= 1) return;
 		List<?> tiles = world.loadedTileEntityList;
 		for (int i = 0; i < tiles.size(); i++) {
 			Object tile = tiles.get(i);

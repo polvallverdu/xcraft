@@ -1,12 +1,15 @@
 package dev.polv.xcraft.forge.ml;
 
 import dev.polv.xcraft.forge.Config;
+import dev.polv.xcraft.forge.TestCapture;
+import dev.polv.xcraft.forge.ServerThread;
 import dev.polv.xcraft.forge.Xcraft;
 import net.minecraft.block.Block;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.world.World;
+import net.minecraftforge.event.entity.EntityJoinWorldEvent;
 import net.minecraftforge.event.entity.living.LivingDropsEvent;
 import net.minecraftforge.event.world.BlockEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
@@ -23,7 +26,9 @@ import net.minecraft.tileentity.AbstractFurnaceTileEntity;
 import net.minecraft.util.IIntArray;
 import net.minecraft.util.math.BlockPos;
 import java.lang.reflect.Field;
+import net.minecraft.item.Items;
 *///?} else {
+import net.minecraft.init.Items;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.player.EntityPlayer;
@@ -183,6 +188,22 @@ public class Events {
 		drops.addAll(extra);
 	}
 
+	/** /xcraft test: records the item entities its scenarios drop (after xCraft multiplied them). */
+	@SubscribeEvent(priority = EventPriority.LOWEST)
+	public void onJoinWorld(EntityJoinWorldEvent event) {
+		//? if >=1.14 {
+		/*if (!TestCapture.active() || !(event.getEntity() instanceof ItemEntity)) return;
+		ItemStack stack = ((ItemEntity) event.getEntity()).getItem();
+		*///?} else {
+		if (!TestCapture.active() || !(event.getEntity() instanceof EntityItem)) return;
+		ItemStack stack = ((EntityItem) event.getEntity()).getItem();
+		//?}
+		if (stack.isEmpty()) return;
+		Item item = stack.getItem();
+		TestCapture.record(item == Items.BEEF ? TestCapture.BEEF : item == Items.LEATHER ? TestCapture.LEATHER : TestCapture.OTHER,
+			stack.getCount());
+	}
+
 	/** XP: Forge's access transformer makes the orb's value public. */
 	//? if >=1.14.4 {
 	/*@SubscribeEvent(priority = EventPriority.LOW)
@@ -199,7 +220,9 @@ public class Events {
 	@SubscribeEvent
 	public void onWorldTick(TickEvent.WorldTickEvent event) {
 		World world = event.world;
-		if (event.phase != TickEvent.Phase.END || world.isRemote || Config.furnace() <= 1) return;
+		if (event.phase != TickEvent.Phase.END || world.isRemote) return;
+		if (Xcraft.DEBUG) ServerThread.tick();
+		if (Config.furnace() <= 1) return;
 		List<TileEntity> tiles = world.loadedTileEntityList;
 		for (int i = 0; i < tiles.size(); i++) {
 			TileEntity tile = tiles.get(i);

@@ -1,5 +1,6 @@
 package dev.polv.xcraft.forge.fml;
 
+import dev.polv.xcraft.forge.Commands;
 import dev.polv.xcraft.forge.Xcraft;
 //? if >=1.8 {
 import net.minecraftforge.fml.common.FMLCommonHandler;
@@ -25,6 +26,7 @@ public class XcraftMod {
 		MinecraftForge.EVENT_BUS.register(events);
 		// TickEvent is on FML's own bus up to 1.8 (the same bus from 1.8.8; registering twice is a no-op)
 		FMLCommonHandler.instance().bus().register(events);
+		if (Xcraft.DEBUG) Commands.selfTest = new SelfTest(this);
 	}
 
 	@Mod.EventHandler

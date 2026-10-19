@@ -11,6 +11,7 @@ Java is taken from JAVA_HOME_<N>_X64 (set by actions/setup-java) or JAVA_<N>_HOM
 """
 import argparse
 import gzip
+import io
 import json
 import os
 import re
@@ -21,6 +22,7 @@ import subprocess
 import sys
 import time
 import urllib.request
+import zipfile
 from pathlib import Path
 
 UA = {"User-Agent": "xcraft-ci-smoke (github.com/polvallverdu/xcraft)"}
@@ -50,7 +52,7 @@ def java_for(mc, loader=""):
     v = key(mc)
     major = 8 if v < [1, 17] else 17 if v < [1, 20, 5] else 21 if v[0] == 1 else 25
     # Forge 1.7.2 ships LaunchWrapper 1.9, which crashes on Java 8 (ConcurrentModificationException at launch)
-    if loader == "forge" and v < [1, 7, 10]:
+    if loader == "forge" and [1, 7] <= v < [1, 7, 10]:
         major = 7
     # Forge 1.16.4's ModLauncher calls a JDK-internal constructor removed in 8u321 (NoSuchMethodError at launch)
     if loader == "forge" and mc == "1.16.4" and os.environ.get("JAVA_8_OLD_HOME"):
@@ -138,18 +140,26 @@ def legacy_checks(r, mc, root):
     return f"furnace boosted {furnace} ticks, loot={loot}"
 
 
-def selftest_checks(r):
-    """Before 1.7 vanilla has no /setblock or /summon: the mod's dev-only /xcraft test builds the scenarios itself."""
+def selftest_checks(r, warmup=False):
+    """Before 1.7 vanilla has no /setblock or /summon: the mod's dev-only /xcraft test builds the scenarios itself.
+
+    With warmup (Forge up to 1.12.2), a first run places a furnace that the world then ticks for 12 s; the second
+    run reports it. Forge 1.13+ reports furnace=-1: the server test checks its furnace in the world there.
+    """
     r.cmd("xcraft ores 2")
     r.cmd("xcraft xp 5")
+    if warmup:
+        r.cmd("xcraft test")
+        time.sleep(12)
     out = re.sub("[\u00a7\ufffd].", "", r.cmd("xcraft test"))  # colour codes (RCON may mangle the \u00a7)
-    m = re.search(r"xcraft-test furnace=(\d+) beef=(\S+) leather=(\S+) ore=(\S+) xp=(-?\d+) \(orb (\d+)\)", out)
+    # furnace=-1: the server test checks furnaces in the world instead (Forge 1.7+)
+    m = re.search(r"xcraft-test furnace=(-?\d+) beef=(\S+) leather=(\S+) ore=(\S+) xp=(-?\d+) \(orb (\d+)\)", out)
     if not m:
         raise RuntimeError(f"no xcraft-test result: {out.strip()[:200]}")
     furnace, beef, leather, ore, xp, orb = m.groups()
     counts = lambda s: [] if s == "none" else [int(c) for c in s.split(",")]
     # 200 furnace ticks smelt 1 item in vanilla; at x8 about 8
-    if int(furnace) < 3:
+    if 0 <= int(furnace) < 3:
         raise RuntimeError(f"furnace not sped up (smelted {furnace})")
     if not counts(beef) or any(c % 3 for c in counts(beef) + counts(leather)):
         raise RuntimeError(f"mob drops not multiplied (beef={beef} leather={leather})")
@@ -158,6 +168,37 @@ def selftest_checks(r):
     if int(xp) != int(orb) * 5:
         raise RuntimeError(f"xp not multiplied ({xp} from a {orb} orb)")
     return f"furnace={furnace} beef={beef} leather={leather} ore={ore} xp={xp}"
+
+
+def install_forge_merged(mc, root, java):
+    """Forge 1.3.2-1.5.2 has no working server installer: patch the vanilla server jar with the universal zip.
+
+    FML downloads its libraries at launch from files.minecraftforge.net/fmllibs, which is gone: pre-fill lib/ from
+    Prism Launcher's mirror of it (same files, FML checks their hashes).
+    """
+    promos = json.loads(get("https://files.minecraftforge.net/net/minecraftforge/forge/promotions_slim.json"))["promos"]
+    version = f"{mc}-{promos.get(f'{mc}-recommended') or promos[f'{mc}-latest']}"
+    universal = zipfile.ZipFile(io.BytesIO(get(
+        f"https://maven.minecraftforge.net/net/minecraftforge/forge/{version}/forge-{version}-universal.zip")))
+    manifest = json.loads(get("https://piston-meta.mojang.com/mc/game/version_manifest_v2.json"))
+    meta = json.loads(get(next(v["url"] for v in manifest["versions"] if v["id"] == mc)))
+    vanilla = zipfile.ZipFile(io.BytesIO(get(meta["downloads"]["server"]["url"])))
+    with zipfile.ZipFile(root / "minecraft_server.jar", "w", zipfile.ZIP_DEFLATED) as out:
+        forge_names = set(universal.namelist())
+        for source, names in ((vanilla, [n for n in vanilla.namelist() if n not in forge_names]), (universal, universal.namelist())):
+            for name in names:
+                if name.endswith("/") or re.match(r"META-INF/(MOJANG|.*\.(SF|RSA|DSA)$)", name):
+                    continue
+                out.writestr(name, source.read(name))
+    libs = re.findall(rb"[\w.-]+\.jar", universal.read("cpw/mods/fml/relauncher/CoreFMLLibraries.class"))
+    names = [l.decode() for l in libs]
+    if b"deobfuscation" in universal.read("fmlversion.properties"):
+        names.append(f"deobfuscation_data_{mc}.zip")
+    (root / "lib").mkdir()
+    for name in names:
+        download(f"https://files.prismlauncher.org/fmllibs/{name}", root / "lib" / name)
+    print(f"  installed forge {version} (merged into the vanilla server, libs: {', '.join(names)})")
+    return [java, "-Xmx2G", "-Dxcraft.debug=true", "-jar", "minecraft_server.jar", "nogui"]
 
 
 def install_forge_like(mc, root, java, loader):
@@ -188,12 +229,14 @@ def install_forge_like(mc, root, java, loader):
         if (root / args_glob).exists():
             print(f"  installed {loader} {version}")
             return [java, "-Xmx2G", "@user_jvm_args.txt", "@" + args_glob, "nogui"]
-        # Forge 1.7-1.12.1 install a "-universal" jar, 1.12.2-1.16.5 a plain one, 1.20.3 only a shim
-        jars = sorted((j for j in root.glob("forge-*.jar") if "installer" not in j.name), key=lambda j: len(j.name))
+        # Forge 1.6 installs "minecraftforge-universal-*.jar", 1.7-1.12.1 a "-universal" jar, 1.12.2-1.16.5 a plain
+        # one, 1.20.3 only a shim
+        jars = sorted((j for j in [*root.glob("forge-*.jar"), *root.glob("minecraftforge-*.jar")] if "installer" not in j.name),
+                      key=lambda j: len(j.name))
         shim = [j for j in jars if j.name.endswith("-shim.jar")]
         if shim or jars:
             print(f"  installed {loader} {version}")
-            debug = ["-Dxcraft.debug=true"] if key(mc) < [1, 13] else []
+            debug = ["-Dxcraft.debug=true"] if key(mc) < [1, 17] else []
             return [java, "-Xmx2G", *debug, "-jar", (shim or jars)[0].name, "nogui"]
     raise RuntimeError(f"{loader} {version} installer produced nothing to launch")
 
@@ -257,9 +300,14 @@ def main():
         cmd = install_legacy_fabric(a.mc, root, java)
     elif a.loader == "ornithe":
         cmd = install_ornithe(a.mc, root, java)
+    elif a.loader == "forge" and key(a.mc) < [1, 6]:
+        cmd = install_forge_merged(a.mc, root, java)
     else:
         cmd = install_forge_like(a.mc, root, java, a.loader)
-    shutil.copy(a.jar, root / "mods")
+    # Forge before 1.6 loads coremods (xCraft's ore hook) only from the coremods folder; FML also finds the mod there
+    target = root / ("coremods" if a.loader == "forge" and key(a.mc) < [1, 6] else "mods")
+    target.mkdir(exist_ok=True)
+    shutil.copy(a.jar, target)
     (root / "eula.txt").write_text("eula=true\n")
     (root / "server.properties").write_text(
         f"online-mode=false\nenable-rcon=true\nrcon.port={RCON_PORT}\nrcon.password={RCON_PASSWORD}\n"
@@ -290,7 +338,15 @@ def main():
         r.cmd("xcraft mobs 3")
         # Forge before 1.13 has the same old commands and no item NBT readout: use the debug log as well
         if a.loader in ("legacy-fabric", "ornithe") or (a.loader == "forge" and key(a.mc) < [1, 13]):
-            reason = selftest_checks(r) if key(a.mc) < [1, 7] else legacy_checks(r, a.mc, root)
+            # Forge: its /xcraft test covers all four multipliers through the game's own code, on the server
+            # thread. Changing the world over RCON (/setblock, /summon, save-all) runs on RCON's thread before 1.12
+            # and can crash the server (ConcurrentModificationException), seen on Forge 1.8 and 1.12.2.
+            if a.loader == "forge":
+                reason = selftest_checks(r, warmup=True)
+            elif key(a.mc) < [1, 7]:
+                reason = selftest_checks(r)
+            else:
+                reason = legacy_checks(r, a.mc, root)
             r.cmd("xcraft reload")
             r.cmd("stop")
             ok = True
@@ -313,6 +369,8 @@ def main():
         furnace = r.cmd("data get block ~ ~3 ~ Items")
         # NoAI cows don't fall; it stands right above the ground, so its drops land next to it
         items = r.cmd("execute positioned ~ ~1 ~4 as @e[type=item,distance=..8] run data get entity @s Item")
+        # forge-legacy (up to 1.16.5) also has /xcraft test, for ores (real harvest) and XP
+        selftest = selftest_checks(r) if a.loader == "forge" and key(a.mc) < [1, 17] else None
         r.cmd("xcraft reload")
         r.cmd("stop")
 
@@ -325,6 +383,8 @@ def main():
         if not beef or any(b % 3 for b in beef):
             raise RuntimeError(f"mob drops not multiplied (beef={beef})")
         ok, reason = True, f"furnace={ingots if a.mc not in FURNACE_UNTESTABLE else 'n/a (vanilla bug)'} beef={beef}"
+        if selftest:
+            reason += f"; self-test {selftest}"
     except StopIteration:
         pass
     except Exception as e:  # noqa: BLE001 - report any failure with the server log tail

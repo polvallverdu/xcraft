@@ -43,7 +43,7 @@ ornithe_settings = (root / "ornithe" / "settings.gradle.kts").read_text()
 for version in re.findall(r'"(1\.\d+(?:\.\d+)?)"', re.search(r"listOf\(([^)]*)\)", ornithe_settings).group(1)):
     matrix.append({"dir": "ornithe", "version": version, "projects": version, "tests": f"ornithe:{version}:{version}"})
 
-# Forge legacy build: every Forge release 1.7.2 - 1.16.5 (Unimined, MCP names); one jar per version
+# Forge legacy build: every Forge release 1.3.2 - 1.16.5 (Unimined, MCP names); one jar per version
 forge_settings = (root / "forge-legacy" / "settings.gradle.kts").read_text()
 for version in re.findall(r'"(1\.\d+(?:\.\d+)?)"', re.search(r"listOf\(([^)]*)\)", forge_settings).group(1)):
     matrix.append({"dir": "forge-legacy", "version": version, "projects": version, "tests": f"forge:{version}:{version}"})

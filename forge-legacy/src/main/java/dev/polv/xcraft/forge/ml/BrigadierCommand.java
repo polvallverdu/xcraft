@@ -21,7 +21,9 @@ public final class BrigadierCommand {
 		LiteralArgumentBuilder<CommandSource> root = net.minecraft.command.Commands.literal("xcraft");
 		root.requires(source -> source.hasPermissionLevel(2))
 			.executes(ctx -> run(ctx.getSource(), new String[0]))
-			.then(net.minecraft.command.Commands.literal("reload").executes(ctx -> run(ctx.getSource(), new String[]{"reload"})));
+			.then(net.minecraft.command.Commands.literal("reload").executes(ctx -> run(ctx.getSource(), new String[]{"reload"})))
+			// Dev-only self-test for the CI server test (Commands ignores it without -Dxcraft.debug=true)
+			.then(net.minecraft.command.Commands.literal("test").executes(ctx -> run(ctx.getSource(), new String[]{"test"})));
 		for (String[] multiplier : Config.MULTIPLIERS) {
 			String name = multiplier[0];
 			root.then(net.minecraft.command.Commands.literal(name)
