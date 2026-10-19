@@ -22,8 +22,6 @@ import net.minecraft.inventory.EquipmentSlotType;
 import net.minecraft.tileentity.AbstractFurnaceTileEntity;
 import net.minecraft.util.IIntArray;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.server.ServerWorld;
-import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
 import java.lang.reflect.Field;
 *///?} else {
 import net.minecraft.entity.EntityLivingBase;
@@ -32,6 +30,11 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.EntityEquipmentSlot;
 import net.minecraft.tileentity.TileEntityFurnace;
 //?}
+//? if >=1.14.4 {
+/*import net.minecraft.world.server.ServerWorld;
+*///?} else if >=1.14 {
+/*import net.minecraft.world.ServerWorld;
+*///?}
 //? if >=1.14.4 {
 /*import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerXpEvent;
@@ -52,7 +55,18 @@ import java.util.List;
 /** The four multipliers and the command, as Forge event handlers. */
 public class Events {
 	//? if >=1.14 {
-	/*private static final Field FURNACE_DATA = ObfuscationReflectionHelper.findField(AbstractFurnaceTileEntity.class, "field_214013_b");
+	/*private static final Field FURNACE_DATA = furnaceData();
+
+	/^* The furnace's protected IIntArray (burn time, fuel total, cook time, cook total), by its SRG name. ^/
+	private static Field furnaceData() {
+		try {
+			Field field = AbstractFurnaceTileEntity.class.getDeclaredField("field_214013_b");
+			field.setAccessible(true);
+			return field;
+		} catch (NoSuchFieldException e) {
+			throw new IllegalStateException(e);
+		}
+	}
 	*///?}
 
 	//? if >=1.16 {
@@ -155,10 +169,10 @@ public class Events {
 			for (int i = 1; i < parts.length; i++) {
 				ItemStack copy = stack.copy();
 				copy.setCount(parts[i]);
-				//? if >=1.16 {
-				/*ItemEntity item = new ItemEntity(drop.world, drop.getPosX(), drop.getPosY(), drop.getPosZ(), copy);
-				*///?} else if >=1.14 {
-				/*ItemEntity item = new ItemEntity(drop.world, drop.posX, drop.posY, drop.posZ, copy);
+				//? if >=1.14 {
+				/*// The position fields went private in 1.15, and their getters are unnamed in 1.15's MCP mappings
+				ItemEntity item = new ItemEntity(drop.world, 0, 0, 0, copy);
+				item.copyLocationAndAnglesFrom(drop);
 				*///?} else {
 				EntityItem item = new EntityItem(drop.world, drop.posX, drop.posY, drop.posZ, copy);
 				//?}
@@ -207,14 +221,14 @@ public class Events {
 		}
 	}
 
-	// The static Block.getDrops is unnamed (func_220077_a) in the 1.14 and 1.15 MCP mappings
-	//? if >=1.16 {
+	// The static Block.getDrops is unnamed (func_220077_a) in the 1.14.4 and 1.15 MCP mappings
+	//? if >=1.14.4 <1.15.1 {
 	/*private static List<ItemStack> drops(BlockState state, ServerWorld world, BlockPos pos, TileEntity tile, PlayerEntity player, ItemStack tool) {
-		return Block.getDrops(state, world, pos, tile, player, tool);
+		return Block.func_220077_a(state, world, pos, tile, player, tool);
 	}
 	*///?} else if >=1.14 {
 	/*private static List<ItemStack> drops(BlockState state, ServerWorld world, BlockPos pos, TileEntity tile, PlayerEntity player, ItemStack tool) {
-		return Block.func_220077_a(state, world, pos, tile, player, tool);
+		return Block.getDrops(state, world, pos, tile, player, tool);
 	}
 	*///?}
 

@@ -28,6 +28,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Forge 1.7.2's LaunchWrapper crashes on Java 8; its test server runs on Java 7 (JAVA_HOME_7_X64).
+      # Before the other JDKs so that 25 stays the default.
+      - name: Setup Java 7
+        if: matrix.target.dir == 'forge-legacy' && matrix.target.version == '1.7.2'
+        uses: actions/setup-java@v4
+        with:
+          java-version: 7
+          distribution: 'zulu'
+
       - name: Setup JDKs
         uses: actions/setup-java@v4
         with:
