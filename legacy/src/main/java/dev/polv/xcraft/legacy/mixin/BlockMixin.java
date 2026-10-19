@@ -54,7 +54,10 @@ public abstract class BlockMixin {
 	@Inject(method = "onBlockBreak", at = @At("HEAD"), cancellable = true)
 	private static void xcraft$multiplyOreDrop(World world, BlockPos pos, ItemStack stack, CallbackInfo ci) {
 		Block ore = Drops.HARVESTED_ORE.get();
-		if (ore == null || Drops.isEmpty(stack) || Drops.isBlockItself(ore, stack)) return;
+		if (ore == null || Drops.isEmpty(stack) || Drops.isBlockItself(ore, stack)) {
+			Drops.capture(stack);
+			return;
+		}
 		Drops.HARVESTED_ORE.remove();
 		try {
 			for (ItemStack part : Drops.multiply(stack, Config.ores())) Block.onBlockBreak(world, pos, part);
@@ -71,7 +74,10 @@ public abstract class BlockMixin {
 	@Inject(method = "method_422", at = @At("HEAD"), cancellable = true)
 	private void xcraft$multiplyOreDrop(World world, int x, int y, int z, ItemStack stack, CallbackInfo ci) {
 		Block ore = Drops.HARVESTED_ORE.get();
-		if (ore == null || Drops.isEmpty(stack) || Drops.isBlockItself(ore, stack)) return;
+		if (ore == null || Drops.isEmpty(stack) || Drops.isBlockItself(ore, stack)) {
+			Drops.capture(stack);
+			return;
+		}
 		Drops.HARVESTED_ORE.remove();
 		try {
 			for (ItemStack part : Drops.multiply(stack, Config.ores())) method_422(world, x, y, z, part);

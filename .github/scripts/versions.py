@@ -27,7 +27,7 @@ for version, loaders in re.findall(r'^\s*match\("([^"]+)", ([^)]*)\)', settings,
     matrix.append({"dir": ".", "version": version,
                    "projects": " ".join(f"{version}-{l}" for l in loaders), "tests": " ".join(tests)})
 
-# Legacy build: Legacy Fabric (1.7.10 - 1.13.2); project name == Minecraft version
+# Legacy build: Legacy Fabric (1.3.1 - 1.13.2); project name == Minecraft version
 legacy_settings = (root / "legacy" / "settings.gradle.kts").read_text()
 legacy_props = dict(
     line.split("=", 1) for line in (root / "legacy" / "gradle.properties").read_text().splitlines()

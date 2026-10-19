@@ -21,7 +21,10 @@ public abstract class EntityMixin {
 
 	@Inject(method = "dropItem(Lnet/minecraft/item/ItemStack;F)Lnet/minecraft/entity/ItemEntity;", at = @At("HEAD"), cancellable = true)
 	private void xcraft$multiplyMobLoot(ItemStack stack, float yOffset, CallbackInfoReturnable<ItemEntity> cir) {
-		if (!Drops.MOB_LOOT.get() || Drops.isEmpty(stack)) return;
+		if (!Drops.MOB_LOOT.get() || Drops.isEmpty(stack)) {
+			Drops.capture(stack);
+			return;
+		}
 		Drops.MOB_LOOT.set(false);
 		ItemEntity last = null;
 		try {

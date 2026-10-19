@@ -30,7 +30,7 @@ public class XcraftCommand extends AbstractCommand {
 
 	@Override
 	public void method_3279(MinecraftServer server, CommandSource source, String[] args) throws CommandException {
-		Commands.run(args, source::sendMessage);
+		Commands.run(args, (message, color, broadcast) -> Chat.send(source, message, color));
 	}
 }
 //?} else if >=1.8 {
@@ -57,7 +57,7 @@ public class XcraftCommand extends AbstractCommand {
 
 	@Override
 	public void execute(CommandSource source, String[] args) throws CommandException {
-		Commands.run(args, source::sendMessage);
+		Commands.run(args, (message, color, broadcast) -> Chat.send(source, message, color));
 	}
 }
 *///?} else {
@@ -76,17 +76,20 @@ public class XcraftCommand extends AbstractCommand {
 		return Commands.USAGE;
 	}
 
+	//? if >=1.4 {
 	@Override
 	public int getPermissionLevel() {
 		return 2;
 	}
+	//?}
+	// 1.3 has no permission levels: commands are for operators (and the console/RCON)
 
 	@Override
 	public void execute(CommandSource source, String[] args) {
-		Commands.run(args, source::sendMessage);
+		Commands.run(args, (message, color, broadcast) -> Chat.send(source, message, color));
 	}
 
-	// 1.7.10's Command extends the raw Comparable
+	// 1.7.10 and older: Command extends the raw Comparable
 	@Override
 	public int compareTo(Object other) {
 		return getCommandName().compareTo(((net.minecraft.command.Command) other).getCommandName());

@@ -24,7 +24,9 @@ import urllib.request
 from pathlib import Path
 
 UA = {"User-Agent": "xcraft-ci-smoke (github.com/polvallverdu/xcraft)"}
-RCON_PORT, RCON_PASSWORD = 25575, "xcraft"
+# XCRAFT_SMOKE_PORT_OFFSET shifts the game and RCON ports so several test servers can run side by side
+PORT_OFFSET = int(os.environ.get("XCRAFT_SMOKE_PORT_OFFSET", "0"))
+RCON_PORT, RCON_PASSWORD = 25575 + PORT_OFFSET, "xcraft"
 # Vanilla 1.14-1.14.2 give command-placed furnaces no block entity, so the furnace can't be set up from RCON
 # there. The same jar's furnace hook is verified on 1.14.3 and 1.14.4.
 FURNACE_UNTESTABLE = {"1.14", "1.14.1", "1.14.2"}
@@ -127,6 +129,28 @@ def legacy_checks(r, mc, root):
     return f"furnace boosted {furnace} ticks, loot={loot}"
 
 
+def selftest_checks(r):
+    """Before 1.7 vanilla has no /setblock or /summon: the mod's dev-only /xcraft test builds the scenarios itself."""
+    r.cmd("xcraft ores 2")
+    r.cmd("xcraft xp 5")
+    out = re.sub("[\u00a7\ufffd].", "", r.cmd("xcraft test"))  # colour codes (RCON may mangle the \u00a7)
+    m = re.search(r"xcraft-test furnace=(\d+) beef=(\S+) leather=(\S+) ore=(\S+) xp=(-?\d+) \(orb (\d+)\)", out)
+    if not m:
+        raise RuntimeError(f"no xcraft-test result: {out.strip()[:200]}")
+    furnace, beef, leather, ore, xp, orb = m.groups()
+    counts = lambda s: [] if s == "none" else [int(c) for c in s.split(",")]
+    # 200 furnace ticks smelt 1 item in vanilla; at x8 about 8
+    if int(furnace) < 3:
+        raise RuntimeError(f"furnace not sped up (smelted {furnace})")
+    if not counts(beef) or any(c % 3 for c in counts(beef) + counts(leather)):
+        raise RuntimeError(f"mob drops not multiplied (beef={beef} leather={leather})")
+    if not counts(ore) or any(c % 2 for c in counts(ore)):
+        raise RuntimeError(f"ore drops not multiplied (coal={ore})")
+    if int(xp) != int(orb) * 5:
+        raise RuntimeError(f"xp not multiplied ({xp} from a {orb} orb)")
+    return f"furnace={furnace} beef={beef} leather={leather} ore={ore} xp={xp}"
+
+
 def install_forge_like(mc, root, java, loader):
     if loader == "neoforge":
         p = mc.split(".")
@@ -227,21 +251,24 @@ def main():
     (root / "eula.txt").write_text("eula=true\n")
     (root / "server.properties").write_text(
         f"online-mode=false\nenable-rcon=true\nrcon.port={RCON_PORT}\nrcon.password={RCON_PASSWORD}\n"
+        f"server-port={25565 + PORT_OFFSET}\n"
         "spawn-protection=0\nbroadcast-rcon-to-ops=false\nmax-tick-time=-1\n"
         # Flat world: random terrain near spawn (water, caves) can carry the test drops away
         + ("level-type=minecraft:flat\n" if key(a.mc) >= [1, 19] else "level-type=FLAT\n"))
 
-    log = open(root / "server.log", "w")
+    # Before 1.7 the vanilla server writes its own server.log in the working directory
+    console = root / ("console.log" if key(a.mc) < [1, 7] else "server.log")
+    log = open(console, "w")
     proc = subprocess.Popen(cmd, cwd=root, stdout=log, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL)
     ok, reason = False, "server did not start"
     try:
         deadline = time.time() + 900
         while time.time() < deadline and proc.poll() is None:
-            text = (root / "server.log").read_text(errors="replace")
+            text = console.read_text(errors="replace")
             if "RCON running" in text:
                 break
             time.sleep(2)
-        text = (root / "server.log").read_text(errors="replace")
+        text = console.read_text(errors="replace")
         if "RCON running" not in text:
             raise RuntimeError(reason)
         r = Rcon()
@@ -250,7 +277,7 @@ def main():
             raise RuntimeError("xCraft did not load (no /xcraft command)")
         r.cmd("xcraft mobs 3")
         if a.loader in ("legacy-fabric", "ornithe"):
-            reason = legacy_checks(r, a.mc, root)
+            reason = selftest_checks(r) if key(a.mc) < [1, 7] else legacy_checks(r, a.mc, root)
             r.cmd("xcraft reload")
             r.cmd("stop")
             ok = True
@@ -296,7 +323,7 @@ def main():
             proc.kill()
         log.close()
 
-    text = (root / "server.log").read_text(errors="replace")
+    text = console.read_text(errors="replace")
     for line in text.splitlines():
         if re.search(r"Mixin apply|InvalidInjection|Exception in|FATAL|Incompatible mod", line):
             print("  !", line[:240])

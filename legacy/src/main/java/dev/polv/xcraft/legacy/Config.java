@@ -1,17 +1,15 @@
 package dev.polv.xcraft.legacy;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-
-import java.io.Reader;
-import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-/** {@code config/xcraft.json}, same keys as the main build so the file is interchangeable. */
+/**
+ * {@code config/xcraft.json}, same keys as the main build so the file is interchangeable. Read and written by hand:
+ * Minecraft only ships Gson from 1.6, and the file is a flat object of four numbers.
+ */
 public final class Config {
 	public static final int MIN = 1;
 	public static final int MAX = 1000;
@@ -23,7 +21,6 @@ public final class Config {
 		{"furnace", "furnaceSpeedMultiplier"},
 	};
 
-	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 	private static final int[] VALUES = {1, 1, 1, 1};
 	private static Path path;
 
@@ -67,30 +64,32 @@ public final class Config {
 
 	public static void reload() {
 		if (Files.exists(path)) {
-			try (Reader reader = Files.newBufferedReader(path)) {
-				// Instance parse(): Minecraft 1.7.10 ships Gson 2.2.4, which has no static parseReader
-				JsonObject json = new JsonParser().parse(reader).getAsJsonObject();
+			try {
+				String json = new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
 				for (int i = 0; i < MULTIPLIERS.length; i++) {
-					JsonElement value = json.get(MULTIPLIERS[i][1]);
-					if (value != null && value.isJsonPrimitive()) VALUES[i] = value.getAsInt();
+					Matcher value = Pattern.compile("\"" + MULTIPLIERS[i][1] + "\"\\s*:\\s*(-?\\d+)").matcher(json);
+					if (value.find()) VALUES[i] = Integer.parseInt(value.group(1));
 				}
 			} catch (Exception e) {
-				LegacyXcraft.LOGGER.error("Failed to read " + path + ", keeping current values", e);
+				LegacyXcraft.error("Failed to read " + path + ", keeping current values", e);
 			}
 		}
 		save();
 	}
 
 	private static void save() {
-		JsonObject json = new JsonObject();
-		for (int i = 0; i < MULTIPLIERS.length; i++) json.addProperty(MULTIPLIERS[i][1], VALUES[i]);
+		// Same layout as Gson's pretty printing in the main build
+		StringBuilder json = new StringBuilder("{\n");
+		for (int i = 0; i < MULTIPLIERS.length; i++) {
+			json.append("  \"").append(MULTIPLIERS[i][1]).append("\": ").append(VALUES[i]);
+			json.append(i < MULTIPLIERS.length - 1 ? ",\n" : "\n");
+		}
+		json.append("}");
 		try {
 			Files.createDirectories(path.getParent());
-			try (Writer writer = Files.newBufferedWriter(path)) {
-				writer.write(GSON.toJson(json));
-			}
+			Files.write(path, json.toString().getBytes(StandardCharsets.UTF_8));
 		} catch (Exception e) {
-			LegacyXcraft.LOGGER.error("Failed to write " + path, e);
+			LegacyXcraft.error("Failed to write " + path, e);
 		}
 	}
 

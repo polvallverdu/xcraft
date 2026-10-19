@@ -20,6 +20,8 @@ public final class Drops {
 	public static final ThreadLocal<Boolean> MOB_LOOT = ThreadLocal.withInitial(() -> false);
 	/** Remembers MOB_LOOT while the equipment drop temporarily disables it. */
 	public static final ThreadLocal<Boolean> MOB_LOOT_PAUSED = ThreadLocal.withInitial(() -> false);
+	/** While /xcraft test runs: every final (already multiplied) ore and mob drop, as "translationKey:count". */
+	public static final ThreadLocal<List<String>> TEST_CAPTURE = new ThreadLocal<>();
 
 	private Drops() {
 	}
@@ -29,15 +31,30 @@ public final class Drops {
 		/*String path = Registry.BLOCK.getId(block).getPath();
 		*///?} else if >=1.8 {
 		String path = ((Identifier) Block.REGISTRY.getIdentifier(block)).getPath();
-		//?} else {
+		//?} else if >=1.7 {
 		/*String path = String.valueOf(Block.REGISTRY.getId(block));
+		*///?} else {
+		/*// No block registry before 1.7: go by the translation key (tile.oreCoal, tile.oreRedstone, tile.netherquartz)
+		String key = block.getTranslationKey();
+		if (key == null) return false;
+		String path = key.startsWith("tile.ore") || key.equals("tile.netherquartz") ? "x_ore" : key;
 		*///?}
 		return path.endsWith("_ore");
 	}
 
 	/** True if the stack is the ore block itself (e.g. modded Silk Touch), which is never multiplied. */
 	public static boolean isBlockItself(Block block, ItemStack stack) {
+		//? if >=1.7 {
 		return stack.getItem() == Item.fromBlock(block);
+		//?} else {
+		/*return stack.id == block.id;
+		*///?}
+	}
+
+	/** Records a final drop for /xcraft test (no-op otherwise). */
+	public static void capture(ItemStack stack) {
+		List<String> captured = TEST_CAPTURE.get();
+		if (captured != null && !isEmpty(stack)) captured.add(stack.getTranslationKey() + ":" + count(stack));
 	}
 
 	public static int count(ItemStack stack) {

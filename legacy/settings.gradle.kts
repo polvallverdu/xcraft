@@ -1,4 +1,4 @@
-// xCraft for Minecraft 1.7.10 - 1.13.2 on Legacy Fabric.
+// xCraft for Minecraft 1.3.1 - 1.13.2 on Legacy Fabric.
 // A separate build from the root one: these versions have no Mojang mappings, so they use Legacy Yarn
 // names (one mapping family for all of them) and Legacy Looming instead of Fabric Loom 1.19.
 pluginManagement {
@@ -24,7 +24,8 @@ stonecutter {
 		val vcs = "1.12.2"
 		val only = providers.gradleProperty("xcraft.versions").orNull
 			?.split(',')?.map(String::trim)?.filter(String::isNotEmpty)?.toSet()
-		listOf("1.13.2", "1.12.2", "1.11.2", "1.10.2", "1.9.4", "1.8.9", "1.7.10").forEach {
+		listOf("1.13.2", "1.12.2", "1.11.2", "1.10.2", "1.9.4", "1.8.9", "1.7.10",
+			"1.6.4", "1.6.2", "1.6.1", "1.5.2", "1.5.1", "1.5", "1.4.7", "1.4.6", "1.4.5", "1.4.4", "1.4.2", "1.3.2", "1.3.1").forEach {
 			if (only == null || it in only || it == vcs) version(it, it)
 		}
 		vcsVersion = vcs
