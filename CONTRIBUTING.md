@@ -17,18 +17,20 @@ stonecutter.properties.toml # mod metadata + per-version dependency versions
 settings.gradle.kts         # which Minecraft version × loader combos get built
 ```
 
-## The three builds
+## The four builds
 
-Minecraft versions before 1.14 have no Mojang mappings, so they can't share sources with the main build:
+Minecraft versions before 1.14 have no Mojang mappings, so they can't share sources with the main build (and old Forge
+is event-based, so it gets its own build too):
 
 | Directory | Versions | Toolchain | Mappings |
 |---|---|---|---|
-| `.` (root) | 1.14 → 26.3 | Fabric Loom, ModDevGradle (NeoForge, legacy Forge) | Mojang |
-| `legacy/` | 1.7.2 → 1.13.2 (Legacy Fabric releases) | Legacy Looming | Legacy Yarn |
+| `.` (root) | 1.14 → 26.3 | Fabric Loom, ModDevGradle (NeoForge; Forge 1.17.1–1.20.1), ForgeGradle 7 + Renamer (Forge 1.20.2+) | Mojang |
+| `legacy/` | 1.3.1 → 1.13.2 (Legacy Fabric releases) | Legacy Looming | Legacy Yarn |
 | `ornithe/` | 1.9–1.13.1 releases Legacy Fabric lacks | Fabric Loom 1.18 + Ploceus | Feather |
+| `forge-legacy/` | Forge 1.3.2 → 1.16.5 | Unimined | MCP |
 
-Each is its own Gradle build with Stonecutter and its own wrapper (`cd legacy && ./gradlew ...`). They share the
-config file format and features, not code. All three take `-Pxcraft.versions=<mc>[,<mc>]` to configure only
+Each is its own Gradle build with Stonecutter and its own wrapper (`cd legacy && ./gradlew ...`, likewise `ornithe/` and `forge-legacy/`). They share the
+config file format and features, not code. All four take `-Pxcraft.versions=<mc>[,<mc>]` to configure only
 those versions; the root build also takes `-Pxcraft.fabricMirror` to fetch Fabric artifacts from Legacy Fabric's
 mirror when maven.fabricmc.net is down.
 
@@ -39,7 +41,11 @@ version each jar is published for** (hotfixes included) on a real server with
 [smoke_prod.py](.github/scripts/smoke_prod.py): the official Fabric/Legacy Fabric launcher, NeoForge/Forge
 installer, or an Ornithe launch profile. It sets the multipliers over RCON and checks that a furnace smelts faster
 and a killed cow's drops are multiplied (old versions run with `-Dxcraft.debug=true` and are checked through the
-debug log). The same script works locally:
+debug log). Versions whose vanilla server can't set the scenarios up from commands (no `/summon`/`/setblock` before
+1.7) use the mod's dev-only `/xcraft test`, which is only registered with `-Dxcraft.debug=true`: it places a furnace,
+kills a cow, harvests an ore and picks up an XP orb itself and prints the results, which the script checks for every
+multiplier (all Legacy Fabric versions before 1.7 and every `forge-legacy/` version). The same script works locally
+(`XCRAFT_SMOKE_PORT_OFFSET` moves the server and RCON ports so several can run at once):
 
 ```bash
 python3 .github/scripts/smoke_prod.py --loader neoforge --mc 1.20.3 --jar build/libs/<version>/xcraft-...jar
@@ -69,7 +75,7 @@ Version-specific code uses Stonecutter comments:
 
 ## Adding a Minecraft version
 
-Add a `match("<version>", "<loaders>")` line to `settings.gradle.kts` and a dependency table to `stonecutter.properties.toml`. To publish one jar for neighbouring hotfix releases, list them in `publish.additionalVersions`; CI then tests the jar on each of them. Then fix whatever the compiler and mixins complain about. Forge versions up to 1.20.1 build through ModDevGradle Legacy, and NeoForge versions through ModDevGradle.
+Add a `match("<version>", "<loaders>")` line to `settings.gradle.kts` and a dependency table to `stonecutter.properties.toml`. To publish one jar for neighbouring hotfix releases, list them in `publish.additionalVersions`; CI then tests the jar on each of them. Then fix whatever the compiler and mixins complain about. Forge versions up to 1.20.1 build through ModDevGradle Legacy, Forge 1.20.2+ through ForgeGradle 7 (`build.forge-fg.gradle.kts`, picked automatically), and NeoForge versions through ModDevGradle.
 
 ## Artwork
 

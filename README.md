@@ -10,10 +10,10 @@ A lightweight, server-side mod that multiplies ore drops, mob drops, XP and furn
 [![Build](https://img.shields.io/github/actions/workflow/status/polvallverdu/xcraft/build.yml?branch=main&logo=githubactions&logoColor=white&label=Build)](https://github.com/polvallverdu/xcraft/actions/workflows/build.yml)
 [![License](https://img.shields.io/github/license/polvallverdu/xcraft?color=ff9a1f&label=License)](LICENSE.txt)
 
-![Minecraft](https://img.shields.io/badge/Minecraft-1.7.2_→_26.3-3fdcdc?style=flat-square)
+![Minecraft](https://img.shields.io/badge/Minecraft-1.3.1_→_26.3-3fdcdc?style=flat-square)
 ![Fabric](https://img.shields.io/badge/Fabric-supported-dbd0b4?style=flat-square)
 ![NeoForge](https://img.shields.io/badge/NeoForge-supported-f16436?style=flat-square)
-![Forge](https://img.shields.io/badge/Forge-1.17.1_→_1.20.1-1e2d40?style=flat-square)
+![Forge](https://img.shields.io/badge/Forge-1.3.2_→_26.3-1e2d40?style=flat-square)
 
 </div>
 
@@ -109,14 +109,21 @@ Config files from xCraft 1.x keep working with no changes.
 
 ## 📦 Supported versions
 
-**Every Minecraft release from 1.7.2 to 26.3** (84 versions). Each one is booted on a real server in CI with the published jar.
+**Every Minecraft release from 1.3.1 to 26.3** (97 versions). Each one is booted on a real server in CI with the published jar.
 
 | Minecraft | Loaders |
 |---|---|
-| 1.20.2 → 26.3 | Fabric, NeoForge |
+| 1.20.2 → 26.3 | Fabric, NeoForge, Forge |
 | 1.17.1 → 1.20.1 | Fabric, Forge |
-| 1.14 → 1.17 | Fabric |
-| 1.7.2 → 1.13.2 | [Legacy Fabric](https://legacyfabric.net/) (1.7.x, 1.8.x, 1.9.4, 1.10.2, 1.11.2, 1.12.2, 1.13.2) or [Ornithe](https://ornithemc.net/) (1.9–1.9.3, 1.10–1.10.1, 1.11–1.11.1, 1.12–1.12.1, 1.13–1.13.1) |
+| 1.14 → 1.16.5 | Fabric, Forge |
+| 1.7.2 → 1.13.2 | Forge, [Legacy Fabric](https://legacyfabric.net/) (1.7.x, 1.8.x, 1.9.4, 1.10.2, 1.11.2, 1.12.2, 1.13.2) or [Ornithe](https://ornithemc.net/) (1.9–1.9.3, 1.10–1.10.1, 1.11–1.11.1, 1.12–1.12.1, 1.13–1.13.1) |
+| 1.3.1 → 1.6.4 | Forge (from 1.3.2), [Legacy Fabric](https://legacyfabric.net/) |
+
+Forge is supported on every Minecraft release Forge itself exists for, from 1.3.2 to 26.3.
+
+> **Forge 1.3.2 – 1.5.2:** put the jar in the server's `coremods/` folder instead of `mods/`. Those Forge versions only load the hook that multiplies ore drops from there; from `mods/` everything except ores works.
+>
+> **Forge 1.16.4:** Forge itself needs Java 8u312 or older on this version (newer Java 8 builds crash ModLauncher).
 
 xCraft has **no required dependencies**: [MidnightLib](https://modrinth.com/mod/midnightlib) is optional and only adds the in-game config screen (1.17.1+).
 
