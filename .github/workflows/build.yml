@@ -37,6 +37,17 @@ jobs:
           java-version: 7
           distribution: 'zulu'
 
+      # Forge 1.16.4's ModLauncher crashes on Java 8u321+; its test server runs on 8u312 (JAVA_8_OLD_HOME)
+      - name: Setup Java 8u312
+        id: java8old
+        if: matrix.target.dir == 'forge-legacy' && matrix.target.version == '1.16.4'
+        uses: actions/setup-java@v4
+        with:
+          java-version: 8.0.312
+          distribution: 'zulu'
+      - if: steps.java8old.outputs.path
+        run: echo "JAVA_8_OLD_HOME=${{ steps.java8old.outputs.path }}" >> "$GITHUB_ENV"
+
       - name: Setup JDKs
         uses: actions/setup-java@v4
         with:
