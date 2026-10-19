@@ -5,7 +5,7 @@
 Installs the official server for that loader and Minecraft version (Fabric server launcher,
 or the NeoForge/Forge installer), sets furnace x8 and mobs x3, then checks that a furnace smelts far faster
 than vanilla and that a killed cow drops beef in multiples of 3. Exits non-zero on failure.
-Legacy Fabric (1.7-1.13) cannot read item NBT over commands on every version, so there the mod runs with
+Legacy Fabric, Ornithe and Forge before 1.13 cannot read item NBT over commands on every version, so there the mod runs with
 -Dxcraft.debug=true and the test checks its debug log for the furnace and mob loot multiplications.
 Java is taken from JAVA_HOME_<N>_X64 (set by actions/setup-java) or JAVA_<N>_HOME, falling back to `java`.
 """
@@ -46,9 +46,15 @@ def download(url, dest):
     return dest
 
 
-def java_for(mc):
+def java_for(mc, loader=""):
     v = key(mc)
     major = 8 if v < [1, 17] else 17 if v < [1, 20, 5] else 21 if v[0] == 1 else 25
+    # Forge 1.7.2 ships LaunchWrapper 1.9, which crashes on Java 8 (ConcurrentModificationException at launch)
+    if loader == "forge" and v < [1, 7, 10]:
+        major = 7
+    # Forge 1.16.4's ModLauncher calls a JDK-internal constructor removed in 8u321 (NoSuchMethodError at launch)
+    if loader == "forge" and mc == "1.16.4" and os.environ.get("JAVA_8_OLD_HOME"):
+        return str(Path(os.environ["JAVA_8_OLD_HOME"]) / "bin" / "java")
     for var in (f"JAVA_HOME_{major}_X64", f"JAVA_HOME_{major}_ARM64", f"JAVA_{major}_HOME"):
         if os.environ.get(var):
             return str(Path(os.environ[var]) / "bin" / "java")
@@ -105,8 +111,11 @@ def install_ornithe(mc, root, java):
 
 def legacy_checks(r, mc, root):
     """Old versions: place a filled furnace and drop a cow to its death, then read xCraft's debug log."""
-    r.cmd("save-all")
-    time.sleep(2)
+    # Only when needed: before 1.12 RCON runs commands off the server thread, and a save-all racing the chunk
+    # unloader can crash the server (ConcurrentModificationException in ChunkProviderServer, seen on 1.10.2/1.11.2)
+    if not (root / "world" / "level.dat").exists():
+        r.cmd("save-all")
+        time.sleep(2)
     x, z = world_spawn(root)
     # CookTimeTotal: only set when an item is inserted normally, so an NBT-placed furnace would never finish
     # Item ids in NBT are numeric before 1.8 (15 = iron ore, 263 = coal)
@@ -172,17 +181,20 @@ def install_forge_like(mc, root, java, loader):
         args_glob = f"libraries/net/minecraftforge/forge/{version}/unix_args.txt"
     download(url, root / "installer.jar")
     for attempt in range(3):
-        subprocess.run([java, "-Djava.awt.headless=true", "-jar", "installer.jar", "--installServer"], cwd=root,
+        # The installer always runs on the version's usual Java (Java 7 can't reach today's TLS endpoints)
+        subprocess.run([java_for(mc), "-Djava.awt.headless=true", "-jar", "installer.jar", "--installServer"], cwd=root,
                        stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, timeout=900)
         # Installers can report success after a failed library download: check for something to launch
         if (root / args_glob).exists():
             print(f"  installed {loader} {version}")
             return [java, "-Xmx2G", "@user_jvm_args.txt", "@" + args_glob, "nogui"]
-        jars = [j for j in root.glob("forge-*.jar") if "installer" not in j.name]
+        # Forge 1.7-1.12.1 install a "-universal" jar, 1.12.2-1.16.5 a plain one, 1.20.3 only a shim
+        jars = sorted((j for j in root.glob("forge-*.jar") if "installer" not in j.name), key=lambda j: len(j.name))
         shim = [j for j in jars if j.name.endswith("-shim.jar")]
         if shim or jars:
             print(f"  installed {loader} {version}")
-            return [java, "-Xmx2G", "-jar", (shim or jars)[0].name, "nogui"]
+            debug = ["-Dxcraft.debug=true"] if key(mc) < [1, 13] else []
+            return [java, "-Xmx2G", *debug, "-jar", (shim or jars)[0].name, "nogui"]
     raise RuntimeError(f"{loader} {version} installer produced nothing to launch")
 
 
@@ -237,7 +249,7 @@ def main():
     root = Path(a.workdir) / f"{a.loader}-{a.mc}"
     shutil.rmtree(root, ignore_errors=True)
     (root / "mods").mkdir(parents=True)
-    java = java_for(a.mc)
+    java = java_for(a.mc, a.loader)
     print(f"== {a.loader} {a.mc} ({java})")
     if a.loader == "fabric":
         cmd = install_fabric(a.mc, root, java)
@@ -276,7 +288,8 @@ def main():
         if "Set furnace multiplier" not in r.cmd("xcraft furnace 8"):
             raise RuntimeError("xCraft did not load (no /xcraft command)")
         r.cmd("xcraft mobs 3")
-        if a.loader in ("legacy-fabric", "ornithe"):
+        # Forge before 1.13 has the same old commands and no item NBT readout: use the debug log as well
+        if a.loader in ("legacy-fabric", "ornithe") or (a.loader == "forge" and key(a.mc) < [1, 13]):
             reason = selftest_checks(r) if key(a.mc) < [1, 7] else legacy_checks(r, a.mc, root)
             r.cmd("xcraft reload")
             r.cmd("stop")

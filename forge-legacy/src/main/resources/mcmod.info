@@ -1,0 +1,13 @@
+[
+  {
+    "modid": "xcraft",
+    "name": "xCraft",
+    "description": "Multiply ore drops, mob drops, XP and furnace speed. Configurable, server-side.",
+    "version": "${version}",
+    "mcversion": "${minecraft}",
+    "url": "https://modrinth.com/mod/xcraft_real",
+    "authorList": ["Pol Vallverdu"],
+    "logoFile": "assets/xcraft/icon.png",
+    "dependencies": []
+  }
+]
