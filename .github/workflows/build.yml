@@ -83,4 +83,5 @@ jobs:
           name: server-logs-${{ matrix.target.dir != '.' && format('{0}-', matrix.target.dir) || '' }}${{ matrix.target.version }}
           path: |
             smoke-servers/*/server.log
+            smoke-servers/*/console.log
             smoke-servers/*/crash-reports/
