@@ -12,19 +12,17 @@ stonecutter {
 platform {
 	loader = "fabric"
 	dependencies {
+		// Covers the hotfix versions this jar is also published for (publish.additionalVersions)
 		required("minecraft") {
-			fabricLikeVersionRange = prop("deps.minecraft")
+			fabricLikeVersionRange = fabricMcRange()
 		}
-		required("fabric-api") {
-			slug("fabric-api")
-			fabricLikeVersionRange = ">=${prop("deps.fabric-api")}"
-		}
-		required("midnightlib") {
+		// Optional: adds the in-game config screen when installed
+		if (hasProperty("deps.midnightlib")) optional("midnightlib") {
 			slug("midnightlib")
-			fabricLikeVersionRange = ">=${prop("deps.midnightlib").substringBefore('+')}"
+			fabricLikeVersionRange = ">=${prop("deps.midnightlib").substringBefore('+').substringBefore('-')}"
 		}
 		required("fabricloader") {
-			fabricLikeVersionRange = ">=${prop("deps.fabric-loader")}"
+			fabricLikeVersionRange = ">=0.14.0"
 		}
 	}
 }
@@ -49,6 +47,12 @@ loom {
 	}
 }
 
+// -Pxcraft.fabricMirror: fetch Fabric artifacts from Legacy Fabric's mirror of maven.fabricmc.net (for when it is unreachable)
+if (providers.gradleProperty("xcraft.fabricMirror").isPresent) {
+	repositories.removeIf { it is MavenArtifactRepository && it.url.host == "maven.fabricmc.net" }
+	repositories.maven("https://repo.legacyfabric.net/fabricmc/") { name = "FabricMirror" }
+}
+
 repositories {
 	mavenCentral()
 	strictMaven("https://api.modrinth.com/maven", "maven.modrinth") { name = "Modrinth" }
@@ -71,8 +75,13 @@ dependencies {
 		})
 	}
 	modImplementation("net.fabricmc:fabric-loader:${prop("deps.fabric-loader")}")
-	modImplementation("net.fabricmc.fabric-api:fabric-api:${prop("deps.fabric-api")}")
-	modImplementation("maven.modrinth:midnightlib:${prop("deps.midnightlib")}")
+	if (hasProperty("deps.midnightlib")) {
+		modCompileOnly("maven.modrinth:midnightlib:${prop("deps.midnightlib")}")
+		// MidnightLib itself needs Fabric API; xCraft does not
+		if (!hasProperty("noMidnightlib")) modLocalRuntime("net.fabricmc.fabric-api:fabric-api:${prop("deps.fabric-api")}")
+		// Run dev with -PnoMidnightlib to test the plain JSON config path
+		if (!hasProperty("noMidnightlib")) modLocalRuntime("maven.modrinth:midnightlib:${prop("deps.midnightlib")}")
+	}
 	// Mod Menu provides the "Config" button in dev runs; it's optional for players
-	modLocalRuntime("com.terraformersmc:modmenu:${prop("deps.modmenu")}") { isTransitive = false }
+	if (hasProperty("deps.modmenu")) modLocalRuntime("com.terraformersmc:modmenu:${prop("deps.modmenu")}") { isTransitive = false }
 }

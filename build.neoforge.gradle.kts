@@ -13,14 +13,16 @@ platform {
 	loader = "neoforge"
 	dependencies {
 		required("minecraft") {
-			forgeLikeVersionRange = prop("deps.minecraft")
+			forgeLikeVersionRange = forgeMcRange()
 		}
-		required("midnightlib") {
+		// Optional: adds the in-game config screen when installed
+		if (hasProperty("deps.midnightlib")) optional("midnightlib") {
 			slug("midnightlib")
-			forgeLikeVersionRange = "[${prop("deps.midnightlib").substringBefore('+')},)"
+			forgeLikeVersionRange = "[${prop("deps.midnightlib").substringBefore('+').substringBefore('-')},)"
 		}
 		required("neoforge") {
-			forgeLikeVersionRange.set("[${prop("deps.neoforge")},)")
+			// Oldest NeoForge line among the supported Minecraft versions
+			forgeLikeVersionRange.set("[${neoForgeLine(supportedMcVersions().first())},)")
 		}
 	}
 }
@@ -66,7 +68,11 @@ repositories {
 }
 
 dependencies {
-	implementation("maven.modrinth:midnightlib:${prop("deps.midnightlib")}")
+	if (hasProperty("deps.midnightlib")) {
+		compileOnly("maven.modrinth:midnightlib:${prop("deps.midnightlib")}")
+		// Run dev with -PnoMidnightlib to test the plain JSON config path
+		if (!hasProperty("noMidnightlib")) runtimeOnly("maven.modrinth:midnightlib:${prop("deps.midnightlib")}")
+	}
 }
 
 tasks.named("createMinecraftArtifacts") {

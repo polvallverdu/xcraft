@@ -7,14 +7,16 @@ platform {
 	loader = "forge"
 	dependencies {
 		required("minecraft") {
-			forgeLikeVersionRange = prop("deps.minecraft")
+			forgeLikeVersionRange = forgeMcRange()
 		}
-		required("midnightlib") {
+		// Optional: adds the in-game config screen when installed
+		if (hasProperty("deps.midnightlib")) optional("midnightlib") {
 			slug("midnightlib")
-			forgeLikeVersionRange = "[${prop("deps.midnightlib").substringBefore('+')},)"
+			forgeLikeVersionRange = "[${prop("deps.midnightlib").substringBefore('+').substringBefore('-')},)"
 		}
 		required("forge") {
-			forgeLikeVersionRange.set("[${prop("deps.forge")},)")
+			// The Minecraft range above is the real constraint; Forge builds differ per Minecraft version
+			forgeLikeVersionRange.set("[0,)")
 		}
 	}
 }
@@ -59,7 +61,11 @@ repositories {
 }
 
 dependencies {
-	modImplementation("maven.modrinth:midnightlib:${prop("deps.midnightlib")}")
+	if (hasProperty("deps.midnightlib")) {
+		modCompileOnly("maven.modrinth:midnightlib:${prop("deps.midnightlib")}")
+		// Run dev with -PnoMidnightlib to test the plain JSON config path
+		if (!hasProperty("noMidnightlib")) modRuntimeOnly("maven.modrinth:midnightlib:${prop("deps.midnightlib")}")
+	}
 	annotationProcessor("org.spongepowered:mixin:${libs.versions.mixin.get()}:processor")
 }
 

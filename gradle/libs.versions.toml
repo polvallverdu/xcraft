@@ -11,6 +11,8 @@ fletching-table = "0.1.0-alpha.23"
 moulberry-mixinconstraints = "1.1.0"
 vanniktech-maven-publish = "0.35.0"
 mixin = "0.8.5"
+forgegradle = "7.0.40"
+forgerenamer = "1.1.8"
 serialization-json = "1.7.3"
 serialization-toml = "0.6.0"
 
@@ -36,3 +38,5 @@ devtools-ksp = { id = "com.google.devtools.ksp", version.ref = "devtools-ksp" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin-jvm" }
 fletching-table = { id = "dev.kikugie.fletching-table", version.ref = "fletching-table" }
 legacyforge-moddev = { id = "net.neoforged.moddev.legacyforge", version.ref = "neoforge-moddev" }
+forgegradle = { id = "net.minecraftforge.gradle", version.ref = "forgegradle" }
+forgerenamer = { id = "net.minecraftforge.renamer", version.ref = "forgerenamer" }

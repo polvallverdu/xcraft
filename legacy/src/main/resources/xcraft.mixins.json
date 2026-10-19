@@ -1,0 +1,19 @@
+{
+  "required": true,
+  "package": "dev.polv.xcraft.legacy.mixin",
+  "compatibilityLevel": "JAVA_8",
+  "minVersion": "0.8",
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "mixins": [
+    "BlockEntityAccessor",
+    "BlockMixin",
+    "CommandManagerMixin",
+    "EntityMixin",
+    "ExperienceOrbEntityMixin",
+    "FurnaceBlockEntityMixin",
+    "LivingEntityMixin",
+    "MobEntityMixin"
+  ]
+}

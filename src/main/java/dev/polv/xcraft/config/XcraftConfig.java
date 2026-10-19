@@ -1,41 +1,63 @@
 package dev.polv.xcraft.config;
 
 import dev.polv.xcraft.Xcraft;
-import eu.midnightdust.lib.config.MidnightConfig;
+
+import java.nio.file.Path;
 
 /**
- * Stored in {@code config/xcraft.json} by MidnightLib, which also provides the in-game config screen
- * (Mod Menu on Fabric, the mod list's Config button on Forge/NeoForge).
+ * Multiplier values, stored in {@code config/xcraft.json}. When MidnightLib is installed it manages the
+ * file and adds an in-game config screen; otherwise xCraft reads and writes the file itself.
  */
-public class XcraftConfig extends MidnightConfig {
-	public static final String MULTIPLIERS = "multipliers";
+public final class XcraftConfig {
 	public static final int MIN = 1;
 	public static final int MAX = 1000;
 
-	@Entry(category = MULTIPLIERS, min = MIN, max = MAX) public static int oreDropMultiplier = 1;
-	@Entry(category = MULTIPLIERS, min = MIN, max = MAX) public static int entityDropMultiplier = 1;
-	@Entry(category = MULTIPLIERS, min = MIN, max = MAX) public static int xpMultiplier = 1;
-	@Entry(category = MULTIPLIERS, min = MIN, max = MAX) public static int furnaceSpeedMultiplier = 1;
+	private static ConfigStore store;
 
-	public static void load() {
-		MidnightConfig.init(Xcraft.MOD_ID, XcraftConfig.class);
-		// The screen enforces the bounds, but the file can be edited by hand.
-		oreDropMultiplier = clamp(oreDropMultiplier);
-		entityDropMultiplier = clamp(entityDropMultiplier);
-		xpMultiplier = clamp(xpMultiplier);
-		furnaceSpeedMultiplier = clamp(furnaceSpeedMultiplier);
+	private XcraftConfig() {
 	}
 
-	public static void save() {
-		MidnightConfig.write(Xcraft.MOD_ID);
+	public static void init(Path configDir) {
+		store = createMidnightStore();
+		if (store == null) store = new JsonConfigStore(configDir.resolve(Xcraft.MOD_ID + ".json"));
+		store.load();
 	}
 
-	private static int clamp(int value) {
-		return Math.max(MIN, Math.min(MAX, value));
+	/** The multiplier's current value, clamped to {@link #MIN}..{@link #MAX} (the file can be edited by hand). */
+	public static int get(Multiplier multiplier) {
+		if (store == null) return 1;
+		return Math.max(MIN, Math.min(MAX, store.get(multiplier)));
+	}
+
+	public static void set(Multiplier multiplier, int value) {
+		store.set(multiplier, value);
+		store.save();
+	}
+
+	public static void reload() {
+		store.load();
+	}
+
+	public static boolean usingMidnightLib() {
+		return !(store instanceof JsonConfigStore);
 	}
 
 	public static String summary() {
-		return "ores x" + oreDropMultiplier + ", mobs x" + entityDropMultiplier
-			+ ", xp x" + xpMultiplier + ", furnace x" + furnaceSpeedMultiplier;
+		return "ores x" + get(Multiplier.ORES) + ", mobs x" + get(Multiplier.MOBS)
+			+ ", xp x" + get(Multiplier.XP) + ", furnace x" + get(Multiplier.FURNACE);
+	}
+
+	private static ConfigStore createMidnightStore() {
+		try {
+			Class.forName("eu.midnightdust.lib.config.MidnightConfig", false, XcraftConfig.class.getClassLoader());
+			Class<?> cls = Class.forName("dev.polv.xcraft.config.MidnightConfigStore");
+			if (!ConfigStore.class.isAssignableFrom(cls)) return null;
+			return (ConfigStore) cls.getDeclaredConstructor().newInstance();
+		} catch (ClassNotFoundException e) {
+			return null;
+		} catch (ReflectiveOperationException | LinkageError e) {
+			Xcraft.LOGGER.warn("MidnightLib is installed but could not be used; falling back to plain JSON config", e);
+			return null;
+		}
 	}
 }

@@ -1,5 +1,6 @@
 package dev.polv.xcraft.mixin;
 
+import dev.polv.xcraft.config.Multiplier;
 import dev.polv.xcraft.config.XcraftConfig;
 import net.minecraft.world.entity.ExperienceOrb;
 import org.spongepowered.asm.mixin.Mixin;
@@ -11,7 +12,8 @@ public abstract class XPMultiplierMixin {
 
 	/**
 	 * The orb value first goes to Mending; whatever is left is given as XP, so multiplying
-	 * it here boosts both without applying the multiplier twice.
+	 * it here boosts both without applying the multiplier twice. Before 1.17 Mending is applied
+	 * inline, so only the XP given to the player is multiplied.
 	 */
 	@ModifyArg(
 		method = "playerTouch",
@@ -19,13 +21,19 @@ public abstract class XPMultiplierMixin {
 			value = "INVOKE",
 			//? if >=1.21 {
 			target = "Lnet/minecraft/world/entity/ExperienceOrb;repairPlayerItems(Lnet/minecraft/server/level/ServerPlayer;I)I"
-			//?} else {
+			//?} else if >=1.17 {
 			/*target = "Lnet/minecraft/world/entity/ExperienceOrb;repairPlayerItems(Lnet/minecraft/world/entity/player/Player;I)I"
+			*///?} else {
+			/*target = "Lnet/minecraft/world/entity/player/Player;giveExperiencePoints(I)V"
 			*///?}
 		),
+		//? if >=1.17 {
 		index = 1
+		//?} else {
+		/*index = 0
+		*///?}
 	)
 	private int xcraft$multiplyXp(int value) {
-		return (int) Math.min(Integer.MAX_VALUE, (long) value * XcraftConfig.xpMultiplier);
+		return (int) Math.min(Integer.MAX_VALUE, (long) value * XcraftConfig.get(Multiplier.XP));
 	}
 }

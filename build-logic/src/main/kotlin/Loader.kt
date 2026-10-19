@@ -12,6 +12,9 @@ sealed class Loader(val id: String, val displayName: String) {
 	abstract val modManifestPath: String
 	abstract val excludedResources: List<String>
 
+	open fun modManifestPath(ctx: Context): String = modManifestPath
+	open fun excludedResources(ctx: Context): List<String> = excludedResources
+
 	open val isFabricLike: Boolean = false
 
 	abstract fun generateManifest(ctx: Context): String
@@ -124,6 +127,15 @@ sealed class Loader(val id: String, val displayName: String) {
 	object NeoForge : ForgeLike("neoforge", "NeoForge") {
 		override val modManifestPath = "META-INF/neoforge.mods.toml"
 		override val excludedResources = (super.excludedResources + "META-INF/mods.toml") + "pack.mcmeta"
+
+		// NeoForge renamed mods.toml to neoforge.mods.toml in 20.5 (Minecraft 1.20.5)
+		private fun usesLegacyManifest(ctx: Context) = ctx.stonecutter.eval(ctx.currentMcVersion, "<1.20.5")
+
+		override fun modManifestPath(ctx: Context) =
+			if (usesLegacyManifest(ctx)) "META-INF/mods.toml" else modManifestPath
+
+		override fun excludedResources(ctx: Context) =
+			if (usesLegacyManifest(ctx)) super.excludedResources + "META-INF/neoforge.mods.toml" else excludedResources
 	}
 
 	object Forge : ForgeLike("forge", "Forge") {

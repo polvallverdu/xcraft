@@ -6,27 +6,102 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
-    name: Build all versions
+  versions:
+    name: List versions
     runs-on: ubuntu-latest
+    outputs:
+      versions: ${{ steps.list.outputs.versions }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: list
+        run: echo "versions=$(python3 .github/scripts/versions.py)" >> "$GITHUB_OUTPUT"
+
+  build:
+    name: Build ${{ matrix.target.dir != '.' && format('{0} ', matrix.target.dir) || '' }}${{ matrix.target.version }}
+    needs: versions
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: ${{ fromJson(needs.versions.outputs.versions) }}
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup JDK
+      # Forge 1.7.2's LaunchWrapper crashes on Java 8; its test server runs on Java 7 (JAVA_HOME_7_X64).
+      # Before the other JDKs so that 25 stays the default.
+      - name: Setup Java 7
+        if: matrix.target.dir == 'forge-legacy' && matrix.target.version == '1.7.2'
         uses: actions/setup-java@v4
         with:
-          java-version: 25
+          java-version: 7
+          distribution: 'zulu'
+
+      # Forge 1.16.4's ModLauncher crashes on Java 8u321+; its test server runs on 8u312 (JAVA_8_OLD_HOME)
+      - name: Setup Java 8u312
+        id: java8old
+        if: matrix.target.dir == 'forge-legacy' && matrix.target.version == '1.16.4'
+        uses: actions/setup-java@v4
+        with:
+          java-version: 8.0.312
+          distribution: 'zulu'
+      - if: steps.java8old.outputs.path
+        run: echo "JAVA_8_OLD_HOME=${{ steps.java8old.outputs.path }}" >> "$GITHUB_ENV"
+
+      - name: Setup JDKs
+        uses: actions/setup-java@v4
+        with:
+          # 8/17/21 run the test servers of older Minecraft versions; 25 (last = default) runs Gradle
+          java-version: |
+            8
+            17
+            21
+            25
           distribution: 'temurin'
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
+        with:
+          # Each matrix job writes its own cache entry; only main updates it
+          cache-read-only: ${{ github.ref != 'refs/heads/main' }}
 
-      - name: Build with Gradle
-        run: ./gradlew buildAndCollect --stacktrace --console=plain
+      - name: Build
+        working-directory: ${{ matrix.target.dir }}
+        run: |
+          tasks=""
+          for p in ${{ matrix.target.projects }}; do tasks="$tasks :$p:buildAndCollect"; done
+          # Retry: plugin/dependency downloads occasionally fail on the runners
+          for attempt in 1 2 3; do
+            ./gradlew $tasks -Pxcraft.versions=${{ matrix.target.version }} --stacktrace --console=plain && exit 0
+            echo "::warning::Build attempt $attempt failed, retrying"; sleep 30
+          done
+          exit 1
 
-      - name: Upload artifacts
+      - name: Upload jars
         uses: actions/upload-artifact@v4
         with:
-          name: xcraft-jars
-          path: build/libs/
+          name: xcraft-${{ matrix.target.dir != '.' && format('{0}-', matrix.target.dir) || '' }}${{ matrix.target.version }}
+          path: ${{ matrix.target.dir }}/build/libs/
+
+      - name: Test on real servers
+        run: |
+          status=0
+          for t in ${{ matrix.target.tests }}; do
+            IFS=: read -r loader primary mc <<< "$t"
+            jar=$(ls ${{ matrix.target.dir }}/build/libs/*/xcraft-*-"${loader#legacy-}"+"$primary"*.jar | grep -v sources | head -1)
+            # One retry: a server occasionally fails to start or accept RCON on the shared runners
+            python3 .github/scripts/smoke_prod.py --loader "$loader" --mc "$mc" --jar "$jar" \
+              || python3 .github/scripts/smoke_prod.py --loader "$loader" --mc "$mc" --jar "$jar" \
+              || status=1
+          done
+          exit $status
+
+      - name: Upload server logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: server-logs-${{ matrix.target.dir != '.' && format('{0}-', matrix.target.dir) || '' }}${{ matrix.target.version }}
+          path: |
+            smoke-servers/*/server.log
+            smoke-servers/*/console.log
+            smoke-servers/*/crash-reports/

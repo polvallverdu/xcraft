@@ -1,0 +1,6 @@
+{
+  "pack": {
+    "description": "xCraft resources",
+    "pack_format": ${pack_format}
+  }
+}

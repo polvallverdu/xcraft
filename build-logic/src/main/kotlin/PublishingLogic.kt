@@ -69,10 +69,16 @@ fun Project.configureModPublishing(ctx: Context) {
 			dryRun = true
 		}
 
-		val jarTask = ctx.extension.jarTask.flatMap { name -> tasks.named(name).map { it as Jar } }
+		// Usually a Jar; Forge 1.20.2-1.20.4 publish Renamer's output (RenameJar), whose only output is the jar
+		val jarFile = ctx.extension.jarTask.flatMap { name ->
+			tasks.named(name).flatMap { task ->
+				if (task is Jar) task.archiveFile
+				else layout.file(task.outputs.files.elements.map { it.single().asFile }) // carries the task dependency
+			}
+		}
 		val srcJarTask = ctx.extension.sourcesJarTask.flatMap { name -> tasks.named(name).map { it as Jar } }
 
-		file.set(jarTask.flatMap(Jar::getArchiveFile))
+		file.set(jarFile)
 		additionalFiles.from(srcJarTask.flatMap(Jar::getArchiveFile))
 		type = releaseType
 		version = ctx.fullVersion
