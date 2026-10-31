@@ -95,6 +95,7 @@ xCraft has **no required dependencies**: [MidnightLib](https://modrinth.com/mod/
 
 - Per-player / permission-based multipliers
 - Per-ore and per-mob multipliers
+- Separate mob drop multipliers for hostile and passive mobs
 - More multipliers ([suggestions welcome!](https://github.com/polvallverdu/xcraft/issues))
 
 ## 📄 License

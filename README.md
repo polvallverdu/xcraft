@@ -141,6 +141,7 @@ Want to build xCraft yourself, add a Minecraft version or cut a release? See [CO
 
 - Per-player / permission-based multipliers
 - Per-ore and per-mob multipliers
+- Separate mob drop multipliers for hostile and passive mobs
 - More multipliers ([suggestions welcome!](https://github.com/polvallverdu/xcraft/issues))
 
 ## 📄 License
