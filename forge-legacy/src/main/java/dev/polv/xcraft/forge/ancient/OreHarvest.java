@@ -44,26 +44,38 @@ public final class OreHarvest {
 	}
 
 	/**
-	 * The ore a player is harvesting right now, if ores are multiplied and the item at (itemX, itemY, itemZ) was
-	 * dropped by it (the game spawns drops within the block's space); else null.
+	 * The block a player is harvesting right now, if its drops are multiplied and the item at (itemX, itemY, itemZ)
+	 * was dropped by it (the game spawns drops within the block's space); else null.
 	 */
-	static Block harvestingOre(double itemX, double itemY, double itemZ) {
-		if (block == null || player == null || Config.ores() <= 1 || !isOre(block)) return null;
+	static Block harvesting(double itemX, double itemY, double itemZ) {
+		if (block == null || player == null || multiplier(block) <= 1) return null;
 		boolean near = Math.abs(itemX - (x + 0.5)) < 1 && Math.abs(itemY - (y + 0.5)) < 1 && Math.abs(itemZ - (z + 0.5)) < 1;
 		return near ? block : null;
 	}
 
-	/** Whether {@code stack}, dropped by {@code ore}, is multiplied: not the ore block itself (Silk Touch, iron ore). */
-	static boolean multiplies(Block ore, ItemStack stack) {
-		return stack != null && stack.stackSize > 0 && stack.itemID != ore.blockID;
+	/**
+	 * The drop multiplier of a harvested block: its own entry in blockDropMultipliers (by numeric id, e.g. "16", or
+	 * name, e.g. "tile.oreCoal"), else the ores multiplier for ores.
+	 */
+	static int multiplier(Block block) {
+		return Config.blockMultiplier(isOre(block), String.valueOf(block.blockID), name(block));
+	}
+
+	/** Whether {@code stack}, dropped by {@code block}, is multiplied: not an ore block itself (Silk Touch, iron ore). */
+	static boolean multiplies(Block block, ItemStack stack) {
+		return stack != null && stack.stackSize > 0 && (stack.itemID != block.blockID || !isOre(block));
+	}
+
+	private static String name(Block block) {
+		//? if >=1.5 {
+		return block.getUnlocalizedName();
+		//?} else {
+		/*return block.getBlockName();
+		*///?}
 	}
 
 	static boolean isOre(Block block) {
-		//? if >=1.5 {
-		String name = block.getUnlocalizedName();
-		//?} else {
-		/*String name = block.getBlockName();
-		*///?}
+		String name = name(block);
 		// Vanilla ores, ores of mods that extend them, and blocks named like ores (tile.oreCopper, tile.netherquartz)
 		return block instanceof BlockOre || block instanceof BlockRedstoneOre
 			|| (name != null && (name.startsWith("tile.ore") || name.endsWith("Ore") || name.equals("tile.netherquartz")));

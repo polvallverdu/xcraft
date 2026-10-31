@@ -1,6 +1,9 @@
 package dev.polv.xcraft.legacy;
 
 import net.minecraft.block.Block;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityType;
+import net.minecraft.entity.mob.Monster;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 //? if >=1.13 {
@@ -12,10 +15,10 @@ import net.minecraft.util.Identifier;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Shared drop state for the mixins: which ore is being harvested, and whether mob loot is being dropped. */
+/** Shared drop state for the mixins: which block is being harvested, and whether mob loot is being dropped. */
 public final class Drops {
-	/** Set while a player-broken ore runs its normal (non Silk Touch) drop logic. */
-	public static final ThreadLocal<Block> HARVESTED_ORE = new ThreadLocal<>();
+	/** Set while a player-broken block whose drops are multiplied runs its normal (non Silk Touch) drop logic. */
+	public static final ThreadLocal<Block> HARVESTED_BLOCK = new ThreadLocal<>();
 	/** True while a mob (not a player) drops its loot; false while it drops its equipment. */
 	public static final ThreadLocal<Boolean> MOB_LOOT = ThreadLocal.withInitial(() -> false);
 	/** Remembers MOB_LOOT while the equipment drop temporarily disables it. */
@@ -24,6 +27,33 @@ public final class Drops {
 	public static final ThreadLocal<List<String>> TEST_CAPTURE = new ThreadLocal<>();
 
 	private Drops() {
+	}
+
+	/** A harvested block's drop multiplier: its blockDropMultipliers entry, else the ores multiplier for ores. */
+	public static int blockMultiplier(Block block) {
+		//? if >=1.13 {
+		/*return Config.blockMultiplier(isOre(block), String.valueOf(Registry.BLOCK.getId(block)));
+		*///?} else if >=1.8 {
+		return Config.blockMultiplier(isOre(block), String.valueOf(Block.REGISTRY.getIdentifier(block)));
+		//?} else if >=1.7 {
+		/*return Config.blockMultiplier(isOre(block), String.valueOf(Block.REGISTRY.getId(block)));
+		*///?} else {
+		/*// No block registry before 1.7: by numeric id ("16") or translation key ("tile.oreCoal")
+		return Config.blockMultiplier(isOre(block), String.valueOf(block.id), block.getTranslationKey());
+		*///?}
+	}
+
+	/** A mob's drop multiplier: its mobDropMultipliers entry, else the hostile/passive multiplier, else mobs. */
+	public static int mobMultiplier(Entity entity) {
+		//? if >=1.13 {
+		/*String id = String.valueOf(EntityType.getId(entity.method_15557()));
+		*///?} else if >=1.11 {
+		String id = String.valueOf(EntityType.getId(entity));
+		//?} else {
+		/*// Before 1.11 entities have names, not ids ("Zombie", "PigZombie")
+		String id = EntityType.getEntityName(entity);
+		*///?}
+		return Config.mobMultiplier(id, entity instanceof Monster);
 	}
 
 	public static boolean isOre(Block block) {

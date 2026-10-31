@@ -5,6 +5,7 @@ import dev.polv.xcraft.forge.TestCapture;
 import dev.polv.xcraft.forge.ServerThread;
 import dev.polv.xcraft.forge.Xcraft;
 import net.minecraft.block.Block;
+import net.minecraft.entity.monster.IMob;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
@@ -57,7 +58,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-/** The four multipliers and the command, as Forge event handlers. */
+/** The multipliers and the command, as Forge event handlers. */
 public class Events {
 	//? if >=1.14 {
 	/*private static final Field FURNACE_DATA = furnaceData();
@@ -88,17 +89,19 @@ public class Events {
 
 	//? if >=1.14 {
 	/*/^*
-	 * Ore drops. Forge stopped firing HarvestDropsEvent in 1.14, so when a player breaks an ore the extra
-	 * (multiplier - 1) copies are rolled from the block's drops and spawned next to vanilla's own drop.
+	 * Ore drops and per-block multipliers. Forge stopped firing HarvestDropsEvent in 1.14, so when a player breaks
+	 * a multiplied block the extra (multiplier - 1) copies are rolled from its drops and spawned next to vanilla's.
 	 ^/
 	@SubscribeEvent(priority = EventPriority.LOWEST)
 	public void onBreak(BlockEvent.BreakEvent event) {
-		int multiplier = Config.ores();
 		PlayerEntity player = event.getPlayer();
 		BlockState state = event.getState();
 		BlockPos pos = event.getPos();
+		String id = blockId(state.getBlock());
+		boolean ore = id.endsWith("_ore");
+		int multiplier = Config.blockMultiplier(ore, id);
 		if (multiplier <= 1 || event.isCanceled() || player == null || player.isCreative()
-			|| !(event.getWorld() instanceof ServerWorld) || !isOre(state.getBlock())) return;
+			|| !(event.getWorld() instanceof ServerWorld)) return;
 		ServerWorld world = (ServerWorld) event.getWorld();
 		ItemStack tool = player.getHeldItemMainhand();
 		if (!state.canHarvestBlock(world, pos, player)
@@ -106,8 +109,8 @@ public class Events {
 		Item blockItem = state.getBlock().asItem();
 		TileEntity tile = world.getTileEntity(pos);
 		for (ItemStack stack : drops(state, world, pos, tile, player, tool)) {
-			// The ore block itself (e.g. iron ore before 1.17) is never multiplied
-			if (stack.isEmpty() || stack.getItem() == blockItem) continue;
+			// An ore block itself (e.g. iron ore before 1.17) is never multiplied
+			if (stack.isEmpty() || (ore && stack.getItem() == blockItem)) continue;
 			Xcraft.debug("ore x" + multiplier + ": " + stack.getCount());
 			for (int part : Xcraft.split(stack.getCount(), multiplier - 1, stack.getMaxStackSize())) {
 				ItemStack copy = stack.copy();
@@ -117,17 +120,23 @@ public class Events {
 		}
 	}
 	*///?} else {
-	/** Ore drops: Forge fires this for the normal drop call and (with isSilkTouching) for Silk Touch. */
+	/**
+	 * Ore drops and per-block multipliers: Forge fires this for the normal drop call and (with isSilkTouching) for
+	 * Silk Touch, which is never multiplied.
+	 */
 	@SubscribeEvent(priority = EventPriority.LOW)
 	public void onHarvestDrops(BlockEvent.HarvestDropsEvent event) {
-		int multiplier = Config.ores();
 		Block block = event.getState().getBlock();
-		if (multiplier <= 1 || event.getHarvester() == null || event.isSilkTouching() || !isOre(block)) return;
+		String id = blockId(block);
+		boolean ore = id.endsWith("_ore");
+		int multiplier = Config.blockMultiplier(ore, id);
+		if (multiplier <= 1 || event.getHarvester() == null || event.isSilkTouching()) return;
 		Item blockItem = block.asItem();
 		List<ItemStack> drops = event.getDrops();
 		List<ItemStack> out = new ArrayList<>();
 		for (ItemStack stack : drops) {
-			if (stack.isEmpty() || stack.getItem() == blockItem) {
+			// An ore block itself is never multiplied
+			if (stack.isEmpty() || (ore && stack.getItem() == blockItem)) {
 				out.add(stack);
 				continue;
 			}
@@ -146,10 +155,11 @@ public class Events {
 	/** Mob drops: the event carries loot and equipment; equipment (the slot's own stack) is left alone. */
 	@SubscribeEvent(priority = EventPriority.LOW)
 	public void onLivingDrops(LivingDropsEvent event) {
-		int multiplier = Config.mobs();
 		//? if >=1.14 {
 		/*LivingEntity entity = event.getEntityLiving();
-		if (multiplier <= 1 || entity instanceof PlayerEntity) return;
+		if (entity instanceof PlayerEntity) return;
+		int multiplier = Config.mobMultiplier(String.valueOf(entity.getType().getRegistryName()), entity instanceof IMob);
+		if (multiplier <= 1) return;
 		Collection<ItemEntity> drops = event.getDrops();
 		List<ItemStack> equipment = new ArrayList<>();
 		for (EquipmentSlotType slot : EquipmentSlotType.values()) equipment.add(entity.getItemStackFromSlot(slot));
@@ -157,7 +167,9 @@ public class Events {
 		for (ItemEntity drop : drops) {
 		*///?} else {
 		EntityLivingBase entity = event.getEntityLiving();
-		if (multiplier <= 1 || entity instanceof EntityPlayer) return;
+		if (entity instanceof EntityPlayer) return;
+		int multiplier = Config.mobMultiplier(String.valueOf(entity.getType().getRegistryName()), entity instanceof IMob);
+		if (multiplier <= 1) return;
 		Collection<EntityItem> drops = event.getDrops();
 		List<ItemStack> equipment = new ArrayList<>();
 		for (EntityEquipmentSlot slot : EntityEquipmentSlot.values()) equipment.add(entity.getItemStackFromSlot(slot));
@@ -255,8 +267,9 @@ public class Events {
 	}
 	*///?}
 
-	private static boolean isOre(Block block) {
-		return String.valueOf(block.getRegistryName()).endsWith("_ore");
+	/** The block's registry name, e.g. "minecraft:coal_ore". */
+	private static String blockId(Block block) {
+		return String.valueOf(block.getRegistryName());
 	}
 
 	private static boolean containsSame(List<ItemStack> stacks, ItemStack stack) {

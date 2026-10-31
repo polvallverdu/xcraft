@@ -1,6 +1,5 @@
 package dev.polv.xcraft.ornithe.mixin;
 
-import dev.polv.xcraft.ornithe.Config;
 import dev.polv.xcraft.ornithe.Drops;
 import dev.polv.xcraft.ornithe.OrnitheXcraft;
 import net.minecraft.entity.Entity;
@@ -22,11 +21,12 @@ public abstract class EntityMixin {
 	@Inject(method = "dropItem(Lnet/minecraft/item/ItemStack;F)Lnet/minecraft/entity/ItemEntity;", at = @At("HEAD"), cancellable = true)
 	private void xcraft$multiplyMobLoot(ItemStack stack, float yOffset, CallbackInfoReturnable<ItemEntity> cir) {
 		if (!Drops.MOB_LOOT.get() || Drops.isEmpty(stack)) return;
+		int multiplier = Drops.mobMultiplier((Entity) (Object) this);
 		Drops.MOB_LOOT.set(false);
 		ItemEntity last = null;
 		try {
-			for (ItemStack part : Drops.multiply(stack, Config.mobs())) last = dropItem(part, yOffset);
-			OrnitheXcraft.debug("mob loot x" + Config.mobs() + ": " + Drops.count(stack) + " -> " + Drops.count(stack) * Config.mobs());
+			for (ItemStack part : Drops.multiply(stack, multiplier)) last = dropItem(part, yOffset);
+			OrnitheXcraft.debug("mob loot x" + multiplier + ": " + Drops.count(stack) + " -> " + Drops.count(stack) * multiplier);
 		} finally {
 			Drops.MOB_LOOT.set(true);
 		}

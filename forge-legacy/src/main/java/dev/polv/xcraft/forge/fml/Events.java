@@ -5,8 +5,10 @@ import dev.polv.xcraft.forge.ServerThread;
 import dev.polv.xcraft.forge.TestCapture;
 import dev.polv.xcraft.forge.Xcraft;
 import net.minecraft.block.Block;
+import net.minecraft.entity.EntityList;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.item.EntityItem;
+import net.minecraft.entity.monster.IMob;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Items;
 import net.minecraft.item.Item;
@@ -34,13 +36,15 @@ import cpw.mods.fml.common.gameevent.TickEvent;
 import java.util.ArrayList;
 import java.util.List;
 
-/** The four multipliers, as Forge event handlers (no mixins or coremods needed on these versions). */
+/** The multipliers, as Forge event handlers (no mixins or coremods needed on these versions). */
 public class Events {
 
-	/** Ore drops: Forge fires this for the normal drop call and (with isSilkTouching) for Silk Touch. */
+	/**
+	 * Ore drops and per-block multipliers: Forge fires this for the normal drop call and (with isSilkTouching) for
+	 * Silk Touch, which is never multiplied.
+	 */
 	@SubscribeEvent(priority = EventPriority.LOW)
 	public void onHarvestDrops(BlockEvent.HarvestDropsEvent event) {
-		int multiplier = Config.ores();
 		//? if >=1.9 {
 		EntityPlayer harvester = event.getHarvester();
 		boolean silkTouch = event.isSilkTouching();
@@ -57,12 +61,16 @@ public class Events {
 		Block block = event.block;
 		List<ItemStack> drops = event.drops;
 		*///?}
-		if (multiplier <= 1 || harvester == null || silkTouch || !isOre(block)) return;
+		if (harvester == null || silkTouch) return;
+		String id = blockId(block);
+		boolean ore = id.endsWith("_ore");
+		int multiplier = Config.blockMultiplier(ore, id);
+		if (multiplier <= 1) return;
 		Item blockItem = Item.getItemFromBlock(block);
 		List<ItemStack> out = new ArrayList<ItemStack>();
 		for (ItemStack stack : drops) {
-			// The ore block itself (e.g. iron ore before 1.17) is never multiplied
-			if (empty(stack) || stack.getItem() == blockItem) {
+			// An ore block itself (e.g. iron ore before 1.17) is never multiplied
+			if (empty(stack) || (ore && stack.getItem() == blockItem)) {
 				out.add(stack);
 				continue;
 			}
@@ -80,7 +88,6 @@ public class Events {
 	/** Mob drops: the event carries loot and equipment; equipment (the slot's own stack) is left alone. */
 	@SubscribeEvent(priority = EventPriority.LOW)
 	public void onLivingDrops(LivingDropsEvent event) {
-		int multiplier = Config.mobs();
 		//? if >=1.9 {
 		EntityLivingBase entity = event.getEntityLiving();
 		List<EntityItem> drops = event.getDrops();
@@ -88,7 +95,9 @@ public class Events {
 		/*EntityLivingBase entity = event.entityLiving;
 		List<EntityItem> drops = event.drops;
 		*///?}
-		if (multiplier <= 1 || entity instanceof EntityPlayer) return;
+		if (entity instanceof EntityPlayer) return;
+		int multiplier = Config.mobMultiplier(EntityList.getEntityString(entity), entity instanceof IMob);
+		if (multiplier <= 1) return;
 		List<ItemStack> equipment = equipment(entity);
 		List<EntityItem> extra = new ArrayList<EntityItem>();
 		for (EntityItem drop : drops) {
@@ -168,11 +177,12 @@ public class Events {
 		}
 	}
 
-	private static boolean isOre(Block block) {
+	/** The block's registry name, e.g. "minecraft:coal_ore". */
+	private static String blockId(Block block) {
 		//? if >=1.9 {
-		return String.valueOf(Block.REGISTRY.getNameForObject(block)).endsWith("_ore");
+		return String.valueOf(Block.REGISTRY.getNameForObject(block));
 		//?} else {
-		/*return String.valueOf(Block.blockRegistry.getNameForObject(block)).endsWith("_ore");
+		/*return String.valueOf(Block.blockRegistry.getNameForObject(block));
 		*///?}
 	}
 

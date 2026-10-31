@@ -1,6 +1,13 @@
 package dev.polv.xcraft.ornithe;
 
 import net.minecraft.block.Block;
+import net.minecraft.entity.Entity;
+//? if >=1.13 {
+/*import net.minecraft.entity.EntityType;
+*///?} else {
+import net.minecraft.entity.Entities;
+//?}
+import net.minecraft.entity.living.mob.monster.Monster;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 //? if >=1.13.1 {
@@ -12,16 +19,36 @@ import net.minecraft.resource.Identifier;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Shared drop state for the mixins: which ore is being harvested, and whether mob loot is being dropped. */
+/** Shared drop state for the mixins: which block is being harvested, and whether mob loot is being dropped. */
 public final class Drops {
-	/** Set while a player-broken ore runs its normal (non Silk Touch) drop logic. */
-	public static final ThreadLocal<Block> HARVESTED_ORE = new ThreadLocal<>();
+	/** Set while a player-broken block whose drops are multiplied runs its normal (non Silk Touch) drop logic. */
+	public static final ThreadLocal<Block> HARVESTED_BLOCK = new ThreadLocal<>();
 	/** True while a mob (not a player) drops its loot; false while it drops its equipment. */
 	public static final ThreadLocal<Boolean> MOB_LOOT = ThreadLocal.withInitial(() -> false);
 	/** Remembers MOB_LOOT while the equipment drop temporarily disables it. */
 	public static final ThreadLocal<Boolean> MOB_LOOT_PAUSED = ThreadLocal.withInitial(() -> false);
 
 	private Drops() {
+	}
+
+	/** A harvested block's drop multiplier: its blockDropMultipliers entry, else the ores multiplier for ores. */
+	public static int blockMultiplier(Block block) {
+		//? if >=1.13.1 {
+		/*return Config.blockMultiplier(isOre(block), String.valueOf(Registry.BLOCK.getKey(block)));
+		*///?} else {
+		return Config.blockMultiplier(isOre(block), String.valueOf(Block.REGISTRY.getKey(block)));
+		//?}
+	}
+
+	/** A mob's drop multiplier: its mobDropMultipliers entry, else the hostile/passive multiplier, else mobs. */
+	public static int mobMultiplier(Entity entity) {
+		//? if >=1.13 {
+		/*String id = String.valueOf(EntityType.getKey(entity.getType()));
+		*///?} else {
+		// An id ("minecraft:zombie") from 1.11, a name ("Zombie") before
+		String id = String.valueOf(Entities.getKey(entity));
+		//?}
+		return Config.mobMultiplier(id, entity instanceof Monster);
 	}
 
 	public static boolean isOre(Block block) {

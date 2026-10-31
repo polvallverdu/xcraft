@@ -15,12 +15,12 @@ A lightweight, server-side mod that multiplies ore drops, mob drops, XP and furn
 ## ✨ Features
 
 ### ![](https://raw.githubusercontent.com/polvallverdu/xcraft/main/.github/assets/feature-ores.png) Ore drops multiplier
-Every block that is an ore (`*_ore`, or tagged `c:ores` / `forge:ores`, so modded ores work too) drops **×N** its normal loot when mined. It stacks on top of Fortune, and **Silk Touch is left alone**, so you won't get stacks of ore blocks.
+Every block that is an ore (`*_ore`, or tagged `c:ores` / `forge:ores`, so modded ores work too) drops **×N** its normal loot when mined. It stacks on top of Fortune, and **Silk Touch is left alone**, so you won't get stacks of ore blocks. Need more control? Give **any block** its own multiplier (e.g. diamond ore ×10, gravel ×3).
 
 [Watch it in action](https://github.com/user-attachments/assets/5d976689-09b9-4892-acba-49f4bda2ba78)
 
 ### ![](https://raw.githubusercontent.com/polvallverdu/xcraft/main/.github/assets/feature-mobs.png) Mob drops multiplier
-Every mob's loot table drops **×N** items. Player inventories are never duplicated.
+Every mob's loot table drops **×N** items. Set **hostile** and **passive** mobs apart, or give **any mob** its own multiplier (e.g. zombies ×5). Player inventories and mob equipment are never duplicated.
 
 [Watch it in action](https://github.com/user-attachments/assets/36f655c1-0416-4e70-ac5b-02a376f5ecdb)
 
@@ -41,29 +41,48 @@ Furnaces, blast furnaces and smokers cook **×N** faster. Outputs, recipe XP and
 
 All commands need operator permissions (level 2). Changes apply instantly and are saved to the config file.
 
-| Command                         | What it does                                  |
-|---------------------------------|-----------------------------------------------|
-| `/xcraft`                       | Show all current multipliers                  |
-| `/xcraft <ores\|mobs\|xp\|furnace>` | Show one multiplier                           |
-| `/xcraft <ores\|mobs\|xp\|furnace> <1-1000>` | Set a multiplier, e.g. `/xcraft ores 4`  |
-| `/xcraft reload`                | Re-read `config/xcraft.json` from disk         |
+| Command | What it does |
+|---|---|
+| `/xcraft` | Show all current multipliers |
+| `/xcraft <ores\|mobs\|xp\|furnace> [1-1000]` | Show or set a multiplier, e.g. `/xcraft ores 4` |
+| `/xcraft <hostile\|passive> [0-1000]` | Show or set the hostile / passive mob multiplier (`0` = same as `mobs`) |
+| `/xcraft mob [<id> [0-1000]]` | List per-mob multipliers, or show / set one, e.g. `/xcraft mob minecraft:zombie 5` (`0` removes it) |
+| `/xcraft block [<id> [0-1000]]` | List per-block multipliers, or show / set one, e.g. `/xcraft block minecraft:gravel 3` (`0` removes it) |
+| `/xcraft reload` | Re-read `config/xcraft.json` from disk |
 
 ## ⚙️ Configuration
 
 **In game:** open the mod list and click **Config** next to xCraft. On Fabric this needs [Mod Menu](https://modrinth.com/mod/modmenu); Forge and NeoForge have the button built in. The screen needs [MidnightLib](https://modrinth.com/mod/midnightlib) installed; without it, use the commands or the file.
 
-**On a server:** use the `/xcraft` commands above, or edit `config/xcraft.json`, which is created on first launch. Every value defaults to `1` (vanilla).
+**On a server:** use the `/xcraft` commands above, or edit `config/xcraft.json`, which is created on first launch. Every multiplier defaults to `1` (vanilla); hostile and passive default to `0` (same as mobs).
 
 ```json
 {
   "oreDropMultiplier": 4,
   "entityDropMultiplier": 2,
+  "hostileMobDropMultiplier": 3,
+  "passiveMobDropMultiplier": 0,
   "xpMultiplier": 3,
-  "furnaceSpeedMultiplier": 8
+  "furnaceSpeedMultiplier": 8,
+  "blockDropMultipliers": [
+    "minecraft:diamond_ore=10",
+    "minecraft:gravel=3"
+  ],
+  "mobDropMultipliers": [
+    "minecraft:zombie=5",
+    "minecraft:cow=1"
+  ]
 }
 ```
 
-Config files from xCraft 1.x keep working with no changes.
+The most specific setting wins:
+
+- **Mobs:** the mob's own entry in `mobDropMultipliers` → else `hostileMobDropMultiplier` for hostile mobs (zombies, skeletons, slimes, ghasts…) or `passiveMobDropMultiplier` for every other mob (cows, villagers, wolves…), unless it is `0` → else `entityDropMultiplier`.
+- **Blocks:** the block's own entry in `blockDropMultipliers` (any block, not only ores; an ore dropping itself, as with Silk Touch, is never multiplied) → else `oreDropMultiplier` for ores.
+
+In the example, zombies drop ×5, other hostile mobs ×3, cows ×1 and other passive mobs ×2. Use `1` to exclude a block or mob. Ids are the ones `/summon` and `/setblock` take; the `minecraft:` prefix and capitals don't matter, so `minecraft:zombie` also matches the `Zombie` of versions before 1.11. Before 1.7 blocks have no names: use their number (`56` is diamond ore).
+
+Config files from older xCraft versions keep working with no changes.
 
 ## 📦 Supported versions
 
@@ -94,8 +113,6 @@ xCraft has **no required dependencies**: [MidnightLib](https://modrinth.com/mod/
 ## 💡 Planned
 
 - Per-player / permission-based multipliers
-- Per-ore and per-mob multipliers
-- Separate mob drop multipliers for hostile and passive mobs
 - More multipliers ([suggestions welcome!](https://github.com/polvallverdu/xcraft/issues))
 
 ## 📄 License

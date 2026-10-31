@@ -1,6 +1,5 @@
 package dev.polv.xcraft.legacy.mixin;
 
-import dev.polv.xcraft.legacy.Config;
 import dev.polv.xcraft.legacy.Drops;
 import dev.polv.xcraft.legacy.LegacyXcraft;
 import net.minecraft.block.Block;
@@ -17,8 +16,8 @@ import net.minecraft.util.math.BlockPos;
 *///?}
 
 /**
- * Ore drops. A player harvest runs either the Silk Touch branch (drops the block itself) or the normal drop call;
- * only the normal call is marked, and every stack spawned while it runs is multiplied.
+ * Ore drops and per-block multipliers. A player harvest runs either the Silk Touch branch (drops the block itself)
+ * or the normal drop call; only the normal call is marked, and every stack spawned while it runs is multiplied.
  */
 @Mixin(Block.class)
 public abstract class BlockMixin {
@@ -34,7 +33,7 @@ public abstract class BlockMixin {
 	*///?}
 	private void xcraft$beforeNormalDrops(CallbackInfo ci) {
 		Block self = (Block) (Object) this;
-		if (Config.ores() > 1 && Drops.isOre(self)) Drops.HARVESTED_ORE.set(self);
+		if (Drops.blockMultiplier(self) > 1) Drops.HARVESTED_BLOCK.set(self);
 	}
 
 	//? if >=1.13 {
@@ -47,23 +46,25 @@ public abstract class BlockMixin {
 	/*@Inject(method = "method_424", at = @At(value = "INVOKE", target = "Lnet/minecraft/block/Block;canStayPlaced(Lnet/minecraft/world/World;IIIII)V", shift = At.Shift.AFTER))
 	*///?}
 	private void xcraft$afterNormalDrops(CallbackInfo ci) {
-		Drops.HARVESTED_ORE.remove();
+		Drops.HARVESTED_BLOCK.remove();
 	}
 
 	//? if >=1.8 {
 	@Inject(method = "onBlockBreak", at = @At("HEAD"), cancellable = true)
 	private static void xcraft$multiplyOreDrop(World world, BlockPos pos, ItemStack stack, CallbackInfo ci) {
-		Block ore = Drops.HARVESTED_ORE.get();
-		if (ore == null || Drops.isEmpty(stack) || Drops.isBlockItself(ore, stack)) {
+		Block block = Drops.HARVESTED_BLOCK.get();
+		// An ore block itself (e.g. iron ore) is never multiplied
+		if (block == null || Drops.isEmpty(stack) || (Drops.isOre(block) && Drops.isBlockItself(block, stack))) {
 			Drops.capture(stack);
 			return;
 		}
-		Drops.HARVESTED_ORE.remove();
+		int multiplier = Drops.blockMultiplier(block);
+		Drops.HARVESTED_BLOCK.remove();
 		try {
-			for (ItemStack part : Drops.multiply(stack, Config.ores())) Block.onBlockBreak(world, pos, part);
-			LegacyXcraft.debug("ore x" + Config.ores() + ": " + Drops.count(stack));
+			for (ItemStack part : Drops.multiply(stack, multiplier)) Block.onBlockBreak(world, pos, part);
+			LegacyXcraft.debug("block x" + multiplier + ": " + Drops.count(stack));
 		} finally {
-			Drops.HARVESTED_ORE.set(ore);
+			Drops.HARVESTED_BLOCK.set(block);
 		}
 		ci.cancel();
 	}
@@ -73,17 +74,19 @@ public abstract class BlockMixin {
 
 	@Inject(method = "method_422", at = @At("HEAD"), cancellable = true)
 	private void xcraft$multiplyOreDrop(World world, int x, int y, int z, ItemStack stack, CallbackInfo ci) {
-		Block ore = Drops.HARVESTED_ORE.get();
-		if (ore == null || Drops.isEmpty(stack) || Drops.isBlockItself(ore, stack)) {
+		Block block = Drops.HARVESTED_BLOCK.get();
+		// An ore block itself is never multiplied
+		if (block == null || Drops.isEmpty(stack) || (Drops.isOre(block) && Drops.isBlockItself(block, stack))) {
 			Drops.capture(stack);
 			return;
 		}
-		Drops.HARVESTED_ORE.remove();
+		int multiplier = Drops.blockMultiplier(block);
+		Drops.HARVESTED_BLOCK.remove();
 		try {
-			for (ItemStack part : Drops.multiply(stack, Config.ores())) method_422(world, x, y, z, part);
-			LegacyXcraft.debug("ore x" + Config.ores() + ": " + Drops.count(stack));
+			for (ItemStack part : Drops.multiply(stack, multiplier)) method_422(world, x, y, z, part);
+			LegacyXcraft.debug("block x" + multiplier + ": " + Drops.count(stack));
 		} finally {
-			Drops.HARVESTED_ORE.set(ore);
+			Drops.HARVESTED_BLOCK.set(block);
 		}
 		ci.cancel();
 	}

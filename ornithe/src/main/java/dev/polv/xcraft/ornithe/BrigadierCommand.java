@@ -3,6 +3,7 @@ package dev.polv.xcraft.ornithe;
 //? if >=1.13 {
 /*import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
+import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import net.minecraft.server.command.handler.CommandManager;
 import net.minecraft.server.command.source.CommandSourceStack;
@@ -30,10 +31,24 @@ public final class BrigadierCommand {
 					ctx.getSource().sendSuccess(Commands.line(index), false);
 					return Config.get(index);
 				})
-				.then(CommandManager.argument("value", IntegerArgumentType.integer(Config.MIN, Config.MAX)).executes(ctx -> {
+				.then(CommandManager.argument("value", IntegerArgumentType.integer(Config.min(index), Config.MAX)).executes(ctx -> {
 					int value = IntegerArgumentType.getInteger(ctx, "value");
 					Commands.set(index, value, text -> ctx.getSource().sendSuccess(text, true));
 					return value;
+				})));
+		}
+		// /xcraft block|mob [<id> [value]]: ids contain ':', which Brigadier's word arguments reject, so take the rest
+		for (String[] overrides : Config.OVERRIDES) {
+			int list = Config.overrideIndexOf(overrides[0]);
+			root.then(CommandManager.literal(overrides[0])
+				.executes(ctx -> {
+					Commands.override(list, new String[]{overrides[0]}, text -> ctx.getSource().sendSuccess(text, false));
+					return 1;
+				})
+				.then(CommandManager.argument("id", StringArgumentType.greedyString()).executes(ctx -> {
+					String args = overrides[0] + " " + StringArgumentType.getString(ctx, "id");
+					Commands.override(list, args.trim().split("\\s+"), text -> ctx.getSource().sendSuccess(text, true));
+					return 1;
 				})));
 		}
 		dispatcher.register(root);

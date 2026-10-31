@@ -1,7 +1,7 @@
 package dev.polv.xcraft.ornithe.mixin;
 
-import dev.polv.xcraft.ornithe.Config;
 import dev.polv.xcraft.ornithe.Drops;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.living.LivingEntity;
 import net.minecraft.entity.living.player.PlayerEntity;
 import org.spongepowered.asm.mixin.Mixin;
@@ -18,7 +18,7 @@ public abstract class LivingEntityMixin {
 
 	@Inject(method = "die", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/living/LivingEntity;dropItemsFromLootTable(ZILnet/minecraft/entity/damage/DamageSource;)V"))
 	private void xcraft$beforeLoot(CallbackInfo ci) {
-		if (Config.mobs() > 1 && !((Object) this instanceof PlayerEntity)) Drops.MOB_LOOT.set(true);
+		if (!((Object) this instanceof PlayerEntity) && Drops.mobMultiplier((Entity) (Object) this) > 1) Drops.MOB_LOOT.set(true);
 	}
 
 	@Inject(method = "die", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/living/LivingEntity;dropItemsFromLootTable(ZILnet/minecraft/entity/damage/DamageSource;)V", shift = At.Shift.AFTER))

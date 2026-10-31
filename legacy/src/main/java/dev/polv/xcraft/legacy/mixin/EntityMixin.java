@@ -1,6 +1,5 @@
 package dev.polv.xcraft.legacy.mixin;
 
-import dev.polv.xcraft.legacy.Config;
 import dev.polv.xcraft.legacy.Drops;
 import dev.polv.xcraft.legacy.LegacyXcraft;
 import net.minecraft.entity.Entity;
@@ -25,11 +24,12 @@ public abstract class EntityMixin {
 			Drops.capture(stack);
 			return;
 		}
+		int multiplier = Drops.mobMultiplier((Entity) (Object) this);
 		Drops.MOB_LOOT.set(false);
 		ItemEntity last = null;
 		try {
-			for (ItemStack part : Drops.multiply(stack, Config.mobs())) last = dropItem(part, yOffset);
-			LegacyXcraft.debug("mob loot x" + Config.mobs() + ": " + Drops.count(stack) + " -> " + Drops.count(stack) * Config.mobs());
+			for (ItemStack part : Drops.multiply(stack, multiplier)) last = dropItem(part, yOffset);
+			LegacyXcraft.debug("mob loot x" + multiplier + ": " + Drops.count(stack) + " -> " + Drops.count(stack) * multiplier);
 		} finally {
 			Drops.MOB_LOOT.set(true);
 		}

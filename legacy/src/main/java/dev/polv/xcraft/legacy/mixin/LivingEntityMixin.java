@@ -1,7 +1,7 @@
 package dev.polv.xcraft.legacy.mixin;
 
-import dev.polv.xcraft.legacy.Config;
 import dev.polv.xcraft.legacy.Drops;
+import net.minecraft.entity.Entity;
 //? if >=1.6 {
 import net.minecraft.entity.LivingEntity;
 //?} else {
@@ -33,7 +33,7 @@ public abstract class LivingEntityMixin {
 	/*@Inject(method = "dropInventory", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/mob/MobEntity;method_2587(ZI)V"))
 	*///?}
 	private void xcraft$beforeLoot(CallbackInfo ci) {
-		if (Config.mobs() > 1 && !((Object) this instanceof PlayerEntity)) Drops.MOB_LOOT.set(true);
+		if (!((Object) this instanceof PlayerEntity) && Drops.mobMultiplier((Entity) (Object) this) > 1) Drops.MOB_LOOT.set(true);
 	}
 
 	//? if >=1.9 {

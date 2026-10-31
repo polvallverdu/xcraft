@@ -3,7 +3,7 @@
     python3 smoke_prod.py --loader fabric|neoforge|forge|legacy-fabric|ornithe --mc 1.21.7 --jar build/libs/.../xcraft-...jar
 
 Installs the official server for that loader and Minecraft version (Fabric server launcher,
-or the NeoForge/Forge installer), sets furnace x8 and mobs x3, then checks that a furnace smelts far faster
+or the NeoForge/Forge installer), sets furnace x8 and a per-mob x3 for cows (mobs x2, passive x5), then checks that a furnace smelts far faster
 than vanilla and that a killed cow drops beef in multiples of 3. Exits non-zero on failure.
 Legacy Fabric, Ornithe and Forge before 1.13 cannot read item NBT over commands on every version, so there the mod runs with
 -Dxcraft.debug=true and the test checks its debug log for the furnace and mob loot multiplications.
@@ -140,13 +140,17 @@ def legacy_checks(r, mc, root):
     return f"furnace boosted {furnace} ticks, loot={loot}"
 
 
-def selftest_checks(r, warmup=False):
+def selftest_checks(r, mc, warmup=False):
     """Before 1.7 vanilla has no /setblock or /summon: the mod's dev-only /xcraft test builds the scenarios itself.
 
     With warmup (Forge up to 1.12.2), a first run places a furnace that the world then ticks for 12 s; the second
     run reports it. Forge 1.13+ reports furnace=-1: the server test checks its furnace in the world there.
+    Coal ore gets x2 only through its per-block override (ores are x7); blocks have numeric ids before 1.7.
     """
-    r.cmd("xcraft ores 2")
+    r.cmd("xcraft ores 7")
+    coal = "coal_ore" if key(mc) >= [1, 7] else "16"
+    if "Set block" not in r.cmd(f"xcraft block {coal} 2"):
+        raise RuntimeError("no /xcraft block command")
     r.cmd("xcraft xp 5")
     if warmup:
         r.cmd("xcraft test")
@@ -335,16 +339,21 @@ def main():
         # The /xcraft reply proves the mod loaded (some Forge versions drop the mod's SLF4J log lines)
         if "Set furnace multiplier" not in r.cmd("xcraft furnace 8"):
             raise RuntimeError("xCraft did not load (no /xcraft command)")
-        r.cmd("xcraft mobs 3")
+        # The cow gets x3 only through its per-mob override (passive mobs x5, all mobs x2). "cow" also matches
+        # the "Cow" of versions before 1.11 and "minecraft:cow".
+        r.cmd("xcraft mobs 2")
+        r.cmd("xcraft passive 5")
+        if "Set mob cow" not in r.cmd("xcraft mob cow 3"):
+            raise RuntimeError("no /xcraft mob command")
         # Forge before 1.13 has the same old commands and no item NBT readout: use the debug log as well
         if a.loader in ("legacy-fabric", "ornithe") or (a.loader == "forge" and key(a.mc) < [1, 13]):
             # Forge: its /xcraft test covers all four multipliers through the game's own code, on the server
             # thread. Changing the world over RCON (/setblock, /summon, save-all) runs on RCON's thread before 1.12
             # and can crash the server (ConcurrentModificationException), seen on Forge 1.8 and 1.12.2.
             if a.loader == "forge":
-                reason = selftest_checks(r, warmup=True)
+                reason = selftest_checks(r, a.mc, warmup=True)
             elif key(a.mc) < [1, 7]:
-                reason = selftest_checks(r)
+                reason = selftest_checks(r, a.mc)
             else:
                 reason = legacy_checks(r, a.mc, root)
             r.cmd("xcraft reload")
@@ -370,7 +379,7 @@ def main():
         # NoAI cows don't fall; it stands right above the ground, so its drops land next to it
         items = r.cmd("execute positioned ~ ~1 ~4 as @e[type=item,distance=..8] run data get entity @s Item")
         # forge-legacy (up to 1.16.5) also has /xcraft test, for ores (real harvest) and XP
-        selftest = selftest_checks(r) if a.loader == "forge" and key(a.mc) < [1, 17] else None
+        selftest = selftest_checks(r, a.mc) if a.loader == "forge" and key(a.mc) < [1, 17] else None
         r.cmd("xcraft reload")
         r.cmd("stop")
 
