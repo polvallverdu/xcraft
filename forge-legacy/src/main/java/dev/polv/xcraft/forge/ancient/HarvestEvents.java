@@ -11,13 +11,17 @@ import net.minecraftforge.event.world.BlockEvent;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Ore drops on Forge 1.6.2+, which fires HarvestDropsEvent (a separate class: Forge 1.6.1 lacks the event). */
+/**
+ * Ore drops and per-block multipliers on Forge 1.6.2+, which fires HarvestDropsEvent (a separate class: Forge 1.6.1
+ * lacks the event).
+ */
 public class HarvestEvents {
 
 	@ForgeSubscribe(priority = EventPriority.LOW)
 	public void onHarvestDrops(BlockEvent.HarvestDropsEvent event) {
-		int multiplier = Config.ores();
-		if (multiplier <= 1 || event.harvester == null || event.isSilkTouching || !OreHarvest.isOre(event.block)) return;
+		if (event.harvester == null || event.isSilkTouching) return;
+		int multiplier = OreHarvest.multiplier(event.block);
+		if (multiplier <= 1) return;
 		List<ItemStack> out = new ArrayList<ItemStack>();
 		for (ItemStack stack : event.drops) {
 			if (!OreHarvest.multiplies(event.block, stack)) {

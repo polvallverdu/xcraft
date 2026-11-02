@@ -1,7 +1,6 @@
 package dev.polv.xcraft.mixin;
 
 import dev.polv.xcraft.MultiplierUtil;
-import dev.polv.xcraft.config.Multiplier;
 import dev.polv.xcraft.config.XcraftConfig;
 import net.minecraft.core.BlockPos;
 //? if >=1.19.3 {
@@ -59,17 +58,24 @@ public abstract class BlockDropMultiplierMixin {
 	*///?} else {
 	private static void xcraft$multiplyOreDrops(BlockState state, ServerLevel level, BlockPos pos, BlockEntity blockEntity, Entity entity, ItemStack tool, CallbackInfoReturnable<List<ItemStack>> cir) {
 	//?}
-		int multiplier = XcraftConfig.get(Multiplier.ORES);
-		if (multiplier <= 1 || !xcraft$isOre(state)) return;
+		//? if >=1.19.3 {
+		String id = String.valueOf(BuiltInRegistries.BLOCK.getKey(state.getBlock()));
+		//?} else {
+		/*String id = String.valueOf(Registry.BLOCK.getKey(state.getBlock()));
+		*///?}
+		boolean ore = xcraft$isOre(state, id);
+		// Its own blockDropMultipliers entry (any block), else the ores multiplier for ores
+		int multiplier = XcraftConfig.blockMultiplier(id, ore);
+		if (multiplier <= 1) return;
 
 		List<ItemStack> drops = cir.getReturnValue();
-		// Silk Touch (or any mod) dropping the ore block itself: don't duplicate the block.
+		// Silk Touch (or any mod) dropping an ore block itself: don't duplicate the ore.
 		Item blockItem = state.getBlock().asItem();
 		for (ItemStack drop : drops) {
 			//? if >=1.17 {
-			if (drop.is(blockItem)) return;
+			if (ore && drop.is(blockItem)) return;
 			//?} else {
-			/*if (drop.getItem() == blockItem) return;
+			/*if (ore && drop.getItem() == blockItem) return;
 			*///?}
 		}
 
@@ -81,16 +87,12 @@ public abstract class BlockDropMultiplierMixin {
 	}
 
 	@Unique
-	private static boolean xcraft$isOre(BlockState state) {
+	private static boolean xcraft$isOre(BlockState state, String id) {
 		// Before 1.18.2 there are no TagKeys; the "_ore" id check below still covers vanilla and most mods
 		//? if >=1.18.2 {
 		if (state.is(XCRAFT_C_ORES) || state.is(XCRAFT_FORGE_ORES)) return true;
 		//?}
-		//? if >=1.19.3 {
-		return BuiltInRegistries.BLOCK.getKey(state.getBlock()).getPath().endsWith("_ore");
-		//?} else {
-		/*return Registry.BLOCK.getKey(state.getBlock()).getPath().endsWith("_ore");
-		*///?}
+		return id.endsWith("_ore");
 	}
 
 	@Unique

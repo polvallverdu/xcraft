@@ -1,9 +1,14 @@
 package dev.polv.xcraft.mixin;
 
 import dev.polv.xcraft.MultiplierUtil;
-import dev.polv.xcraft.config.Multiplier;
 import dev.polv.xcraft.config.XcraftConfig;
+//? if >=1.19.3 {
+import net.minecraft.core.registries.BuiltInRegistries;
+//?} else {
+/*import net.minecraft.core.Registry;
+*///?}
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import org.spongepowered.asm.mixin.Mixin;
@@ -51,8 +56,15 @@ public abstract class EntityDropMultiplierMixin {
 		*///?}
 	)
 	private Consumer<ItemStack> xcraft$multiplyMobDrops(Consumer<ItemStack> output) {
-		if ((Object) this instanceof Player) return output;
-		int multiplier = XcraftConfig.get(Multiplier.MOBS);
+		LivingEntity self = (LivingEntity) (Object) this;
+		if (self instanceof Player) return output;
+		// Its own mobDropMultipliers entry, else hostile (Enemy: zombies, slimes, ghasts...) or passive, else mobs
+		//? if >=1.19.3 {
+		String id = String.valueOf(BuiltInRegistries.ENTITY_TYPE.getKey(self.getType()));
+		//?} else {
+		/*String id = String.valueOf(Registry.ENTITY_TYPE.getKey(self.getType()));
+		*///?}
+		int multiplier = XcraftConfig.mobMultiplier(id, self instanceof Enemy);
 		if (multiplier <= 1) return output;
 		return stack -> MultiplierUtil.multiply(stack, multiplier, output);
 	}

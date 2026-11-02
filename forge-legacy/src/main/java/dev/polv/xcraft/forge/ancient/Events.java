@@ -11,8 +11,10 @@ import net.minecraftforge.event.entity.living.LivingDropsEvent;
 /*import net.minecraft.src.*;
 *///?} else {
 import net.minecraft.block.Block;
+import net.minecraft.entity.EntityList;
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.item.EntityXPOrb;
+import net.minecraft.entity.monster.IMob;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -33,8 +35,9 @@ public class Events {
 	/** Mob drops: the event carries loot and equipment; equipment (the slot's own stack) is left alone. */
 	@ForgeSubscribe(priority = EventPriority.LOW)
 	public void onLivingDrops(LivingDropsEvent event) {
-		int multiplier = Config.mobs();
-		if (multiplier <= 1 || event.entityLiving instanceof EntityPlayer) return;
+		if (event.entityLiving instanceof EntityPlayer) return;
+		int multiplier = Config.mobMultiplier(EntityList.getEntityString(event.entityLiving), event.entityLiving instanceof IMob);
+		if (multiplier <= 1) return;
 		List<ItemStack> equipment = new ArrayList<ItemStack>();
 		//? if >=1.4.2 {
 		for (int slot = 0; slot < 5; slot++) equipment.add(event.entityLiving.getCurrentItemOrArmor(slot));
@@ -68,15 +71,14 @@ public class Events {
 			multiplyOrb((EntityXPOrb) event.entity);
 		} else if (event.entity instanceof EntityItem && !spawningExtra) {
 			EntityItem item = (EntityItem) event.entity;
-			Block ore = OreHarvest.harvestingOre(item.posX, item.posY, item.posZ);
-			if (ore != null && OreHarvest.multiplies(ore, stackOf(item))) multiplyOreDrop(item);
+			Block block = OreHarvest.harvesting(item.posX, item.posY, item.posZ);
+			if (block != null && OreHarvest.multiplies(block, stackOf(item))) multiplyBlockDrop(item, OreHarvest.multiplier(block));
 			if (TestCapture.active()) record(stackOf(item));
 		}
 	}
 
-	private static void multiplyOreDrop(EntityItem item) {
+	private static void multiplyBlockDrop(EntityItem item, int multiplier) {
 		ItemStack stack = stackOf(item);
-		int multiplier = Config.ores();
 		Xcraft.debug("ore x" + multiplier + ": " + stack.stackSize);
 		int[] parts = Xcraft.split(stack.stackSize, multiplier, stack.getMaxStackSize());
 		stack.stackSize = parts[0];

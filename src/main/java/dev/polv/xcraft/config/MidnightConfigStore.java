@@ -4,6 +4,9 @@ package dev.polv.xcraft.config;
 import dev.polv.xcraft.Xcraft;
 import eu.midnightdust.lib.config.MidnightConfig;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Used only when MidnightLib is installed; it is loaded reflectively so xCraft never touches
  * MidnightLib classes otherwise. MidnightLib reads and writes the same {@code config/xcraft.json}.
@@ -14,14 +17,22 @@ public class MidnightConfigStore extends MidnightConfig implements ConfigStore {
 	//? if >=1.19.4 {
 	@Entry(category = MULTIPLIERS, min = XcraftConfig.MIN, max = XcraftConfig.MAX) public static int oreDropMultiplier = 1;
 	@Entry(category = MULTIPLIERS, min = XcraftConfig.MIN, max = XcraftConfig.MAX) public static int entityDropMultiplier = 1;
+	@Entry(category = MULTIPLIERS, min = 0, max = XcraftConfig.MAX) public static int hostileMobDropMultiplier = 0;
+	@Entry(category = MULTIPLIERS, min = 0, max = XcraftConfig.MAX) public static int passiveMobDropMultiplier = 0;
 	@Entry(category = MULTIPLIERS, min = XcraftConfig.MIN, max = XcraftConfig.MAX) public static int xpMultiplier = 1;
 	@Entry(category = MULTIPLIERS, min = XcraftConfig.MIN, max = XcraftConfig.MAX) public static int furnaceSpeedMultiplier = 1;
+	@Entry(category = MULTIPLIERS) public static List<String> blockDropMultipliers = new ArrayList<>();
+	@Entry(category = MULTIPLIERS) public static List<String> mobDropMultipliers = new ArrayList<>();
 	//?} else {
 	/*// MidnightLib before 1.3 has no config categories
 	@Entry(min = XcraftConfig.MIN, max = XcraftConfig.MAX) public static int oreDropMultiplier = 1;
 	@Entry(min = XcraftConfig.MIN, max = XcraftConfig.MAX) public static int entityDropMultiplier = 1;
+	@Entry(min = 0, max = XcraftConfig.MAX) public static int hostileMobDropMultiplier = 0;
+	@Entry(min = 0, max = XcraftConfig.MAX) public static int passiveMobDropMultiplier = 0;
 	@Entry(min = XcraftConfig.MIN, max = XcraftConfig.MAX) public static int xpMultiplier = 1;
 	@Entry(min = XcraftConfig.MIN, max = XcraftConfig.MAX) public static int furnaceSpeedMultiplier = 1;
+	@Entry public static List<String> blockDropMultipliers = new ArrayList<>();
+	@Entry public static List<String> mobDropMultipliers = new ArrayList<>();
 	*///?}
 
 	@Override
@@ -29,6 +40,8 @@ public class MidnightConfigStore extends MidnightConfig implements ConfigStore {
 		return switch (multiplier) {
 			case ORES -> oreDropMultiplier;
 			case MOBS -> entityDropMultiplier;
+			case HOSTILE -> hostileMobDropMultiplier;
+			case PASSIVE -> passiveMobDropMultiplier;
 			case XP -> xpMultiplier;
 			case FURNACE -> furnaceSpeedMultiplier;
 		};
@@ -39,9 +52,29 @@ public class MidnightConfigStore extends MidnightConfig implements ConfigStore {
 		switch (multiplier) {
 			case ORES -> oreDropMultiplier = value;
 			case MOBS -> entityDropMultiplier = value;
+			case HOSTILE -> hostileMobDropMultiplier = value;
+			case PASSIVE -> passiveMobDropMultiplier = value;
 			case XP -> xpMultiplier = value;
 			case FURNACE -> furnaceSpeedMultiplier = value;
 		}
+	}
+
+	@Override
+	public List<String> getList(Overrides list) {
+		// A hand-edited file can hold "null"
+		List<String> entries = list == Overrides.BLOCK ? blockDropMultipliers : mobDropMultipliers;
+		return entries == null ? new ArrayList<>() : entries;
+	}
+
+	@Override
+	public void setList(Overrides list, List<String> entries) {
+		// In place: the config screen keeps a reference to the list it edits
+		List<String> copy = new ArrayList<>(entries);
+		if (list == Overrides.BLOCK && blockDropMultipliers == null) blockDropMultipliers = new ArrayList<>();
+		if (list == Overrides.MOB && mobDropMultipliers == null) mobDropMultipliers = new ArrayList<>();
+		List<String> target = list == Overrides.BLOCK ? blockDropMultipliers : mobDropMultipliers;
+		target.clear();
+		target.addAll(copy);
 	}
 
 	@Override

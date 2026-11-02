@@ -2,6 +2,7 @@ package dev.polv.xcraft.forge.ml;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
+import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import dev.polv.xcraft.forge.Commands;
 import dev.polv.xcraft.forge.Config;
@@ -24,12 +25,20 @@ public final class BrigadierCommand {
 			.then(net.minecraft.command.Commands.literal("reload").executes(ctx -> run(ctx.getSource(), new String[]{"reload"})))
 			// Dev-only self-test for the CI server test (Commands ignores it without -Dxcraft.debug=true)
 			.then(net.minecraft.command.Commands.literal("test").executes(ctx -> run(ctx.getSource(), new String[]{"test"})));
-		for (String[] multiplier : Config.MULTIPLIERS) {
-			String name = multiplier[0];
+		for (int i = 0; i < Config.MULTIPLIERS.length; i++) {
+			String name = Config.MULTIPLIERS[i][0];
 			root.then(net.minecraft.command.Commands.literal(name)
 				.executes(ctx -> run(ctx.getSource(), new String[]{name}))
-				.then(net.minecraft.command.Commands.argument("value", IntegerArgumentType.integer(Config.MIN, Config.MAX))
+				.then(net.minecraft.command.Commands.argument("value", IntegerArgumentType.integer(Config.min(i), Config.MAX))
 					.executes(ctx -> run(ctx.getSource(), new String[]{name, String.valueOf(IntegerArgumentType.getInteger(ctx, "value"))}))));
+		}
+		// /xcraft block|mob [<id> [value]]: ids contain ':', which Brigadier's word arguments reject, so take the rest
+		for (String[] list : Config.OVERRIDES) {
+			String name = list[0];
+			root.then(net.minecraft.command.Commands.literal(name)
+				.executes(ctx -> run(ctx.getSource(), new String[]{name}))
+				.then(net.minecraft.command.Commands.argument("id", StringArgumentType.greedyString())
+					.executes(ctx -> run(ctx.getSource(), (name + " " + StringArgumentType.getString(ctx, "id")).trim().split("\\s+")))));
 		}
 		dispatcher.register(root);
 	}
