@@ -69,6 +69,8 @@ publishMods {
 	changelog = rootProject.file("../CHANGELOG.md").takeIf { it.exists() }?.readText() ?: ""
 	dryRun = envTrue("PUB_DRY_RUN") || !envTrue("PUB_MODS_ENABLE")
 	val gameVersions = listOf(mc) + hotfixes
+	// CurseForge has no Minecraft 1.5 ("Failed to find version: 1.5"): that jar goes to Modrinth only
+	val curseforgeVersions = gameVersions - "1.5"
 
 	if (env("PUB_MODRINTH_TOKEN") != null) modrinth {
 		accessToken = env("PUB_MODRINTH_TOKEN")
@@ -76,12 +78,12 @@ publishMods {
 		modLoaders.add("legacy-fabric")
 		minecraftVersions.addAll(gameVersions)
 	}
-	if (env("PUB_CURSEFORGE_TOKEN") != null && env("PUB_CURSEFORGE_PROJECT_ID") != null) curseforge {
+	if (env("PUB_CURSEFORGE_TOKEN") != null && env("PUB_CURSEFORGE_PROJECT_ID") != null && curseforgeVersions.isNotEmpty()) curseforge {
 		accessToken = env("PUB_CURSEFORGE_TOKEN")
 		projectId = env("PUB_CURSEFORGE_PROJECT_ID")
 		// CurseForge has no Legacy Fabric loader tag
 		modLoaders.add("fabric")
-		minecraftVersions.addAll(gameVersions)
+		minecraftVersions.addAll(curseforgeVersions)
 		serverRequired = true
 		clientRequired = false
 	}
