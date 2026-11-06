@@ -396,7 +396,8 @@ def main():
         r.cmd("xcraft mob wither 3")
         r.cmd("xcraft mob zombie 3")
         r.cmd("xcraft block dragon_egg 3")
-        r.cmd("gamerule mobGriefing false")  # the creeper must not blow up the ground under the drops
+        # The creeper must not blow up the ground under the drops (the rule is mob_griefing from 26.3)
+        r.cmd("gamerule mobGriefing false" if key(a.mc) < [26, 3] else "gamerule mob_griefing false")
         # Only our tagged mobs and the items next to them: worlds can hold other drops (e.g. mineshaft loot)
         r.cmd('summon cow ~ ~1 ~4 {NoAI:1b,Tags:["xcraft"]}')
         r.cmd('summon wither ~ ~1 ~-16 {NoAI:1b,Tags:["xcraft"]}')
@@ -409,7 +410,9 @@ def main():
             r.cmd("setblock ~-20 ~1 ~ stone")
             r.cmd("setblock ~-20 ~2 ~ torch")
             # Time:1: a falling block with Time 0 and no block of its own where it was summoned removes itself
-            r.cmd('summon falling_block ~-20 ~8 ~ {BlockState:{Name:"minecraft:dragon_egg"},Time:1}')
+            # 26.3 renamed the BlockState tag (without it, the falling block is sand): give both names
+            r.cmd('summon falling_block ~-20 ~8 ~ {BlockState:{Name:"minecraft:dragon_egg"},'
+                  'block_state:{Name:"minecraft:dragon_egg"},Time:1}')
         time.sleep(7)
         furnace = r.cmd("data get block ~ ~3 ~ Items")
         # NoAI cows don't fall; it stands right above the ground, so its drops land next to it
