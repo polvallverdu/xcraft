@@ -409,10 +409,8 @@ def main():
         if check_egg:
             r.cmd("setblock ~-20 ~1 ~ stone")
             r.cmd("setblock ~-20 ~2 ~ torch")
-            # Time:1: a falling block with Time 0 and no block of its own where it was summoned removes itself
-            # 26.3 renamed the BlockState tag (without it, the falling block is sand): give both names
-            r.cmd('summon falling_block ~-20 ~8 ~ {BlockState:{Name:"minecraft:dragon_egg"},'
-                  'block_state:{Name:"minecraft:dragon_egg"},Time:1}')
+            # A placed dragon egg falls by itself (no falling_block NBT: 26.3 no longer reads BlockState)
+            r.cmd("setblock ~-20 ~8 ~ dragon_egg")
         time.sleep(7)
         furnace = r.cmd("data get block ~ ~3 ~ Items")
         # NoAI cows don't fall; it stands right above the ground, so its drops land next to it
