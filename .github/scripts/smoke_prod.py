@@ -289,7 +289,7 @@ def total_items(r, mc, item, pos, radius=10):
     """How many `item`s lie on the ground around `pos`, summed over a scoreboard: every command here replies with
     one line (RCON can return only part of a multi-entity reply, and Forge's hangs on a command with no reply)."""
     sel = f'@e[type=item,distance=..{radius},nbt={{Item:{{id:"minecraft:{item}"}}}}]'
-    found = re.search(r"count: (\d+)", r.cmd(f"execute positioned {pos} if entity {sel}"))
+    found = re.search(r"[Cc]ount: (\d+)", r.cmd(f"execute positioned {pos} if entity {sel}"))
     if not found:
         return 0
     field = "count" if key(mc) >= [1, 20, 5] else "Count"
