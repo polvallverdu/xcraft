@@ -244,7 +244,8 @@ publishMods {
 		modLoaders.add("forge")
 		minecraftVersions.add(mc)
 	}
-	if (env("PUB_CURSEFORGE_TOKEN") != null && env("PUB_CURSEFORGE_PROJECT_ID") != null) curseforge {
+	// CurseForge has no Minecraft 1.5 ("Failed to find version: 1.5"): that jar goes to Modrinth only
+	if (env("PUB_CURSEFORGE_TOKEN") != null && env("PUB_CURSEFORGE_PROJECT_ID") != null && mc != "1.5") curseforge {
 		accessToken = env("PUB_CURSEFORGE_TOKEN")
 		projectId = env("PUB_CURSEFORGE_PROJECT_ID")
 		modLoaders.add("forge")
