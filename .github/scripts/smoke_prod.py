@@ -285,10 +285,20 @@ class Rcon:
         return out
 
 
-def item_counts(item, text):
-    """The counts of every stack of `item` in /data get entity output (both the old and the 1.20.5+ format)."""
-    return [int(next(g for g in m if g)) for m in
-            re.findall(rf'{item}"?, [Cc]ount: (\d+)|[Cc]ount: (\d+)[^}}]*{item}', text)]
+def total_items(r, mc, item, pos, radius=10):
+    """How many `item`s lie on the ground around `pos`, summed over a scoreboard: every command here replies with
+    one line (RCON can return only part of a multi-entity reply, and Forge's hangs on a command with no reply)."""
+    sel = f'@e[type=item,distance=..{radius},nbt={{Item:{{id:"minecraft:{item}"}}}}]'
+    found = re.search(r"count: (\d+)", r.cmd(f"execute positioned {pos} if entity {sel}"))
+    if not found:
+        return 0
+    field = "count" if key(mc) >= [1, 20, 5] else "Count"
+    r.cmd("scoreboard objectives add xcraft dummy")
+    r.cmd("scoreboard players set #total xcraft 0")
+    r.cmd(f"execute positioned {pos} as {sel} store result score @s xcraft run data get entity @s Item.{field}")
+    r.cmd(f"execute positioned {pos} run scoreboard players operation #total xcraft += {sel} xcraft")
+    total = re.search(r"has (\d+)", r.cmd("scoreboard players get #total xcraft"))
+    return int(total.group(1)) if total else -1
 
 
 def main():
@@ -366,7 +376,8 @@ def main():
             r.cmd("stop")
             ok = True
             raise StopIteration
-        r.cmd("forceload add ~ ~")  # 1.21.9+ no longer keeps spawn chunks loaded
+        # 1.21.9+ no longer keeps spawn chunks loaded (and 1.20.5+ ticks fewer of them): every test spot ticks
+        r.cmd("forceload add ~-24 ~-24 ~24 ~24")
         time.sleep(2)
         if key(a.mc) >= [1, 17]:
             r.cmd("setblock ~ ~3 ~ furnace")
@@ -403,9 +414,9 @@ def main():
         furnace = r.cmd("data get block ~ ~3 ~ Items")
         # NoAI cows don't fall; it stands right above the ground, so its drops land next to it
         items = r.cmd("execute positioned ~ ~1 ~4 as @e[type=item,distance=..8] run data get entity @s Item")
-        stars = r.cmd("execute positioned ~ ~1 ~-16 as @e[type=item,distance=..8] run data get entity @s Item") if check_star else ""
-        heads = r.cmd("execute positioned ~20 ~1 ~ as @e[type=item,distance=..10] run data get entity @s Item") if check_head else ""
-        eggs = r.cmd("execute positioned ~-20 ~2 ~ as @e[type=item,distance=..8] run data get entity @s Item") if check_egg else ""
+        stars = total_items(r, a.mc, "nether_star", "~ ~1 ~-16") if check_star else 0
+        heads = total_items(r, a.mc, "zombie_head", "~20 ~1 ~") if check_head else 0
+        eggs = total_items(r, a.mc, "dragon_egg", "~-20 ~2 ~") if check_egg else 0
         # forge-legacy (up to 1.16.5) also has /xcraft test, for ores (real harvest) and XP
         selftest = selftest_checks(r, a.mc) if a.loader == "forge" and key(a.mc) < [1, 17] else None
         r.cmd("xcraft reload")
@@ -425,10 +436,9 @@ def main():
                                           ("dragon eggs", "dragon_egg", eggs, check_egg)):
             if not checked:
                 continue
-            total = sum(item_counts(item, out))
-            if total != 3:
-                raise RuntimeError(f"{name} not multiplied (expected 3, got {total}): {out[:300]}")
-            extra.append(f"{item}={total}")
+            if out != 3:
+                raise RuntimeError(f"{name} not multiplied (expected 3, got {out})")
+            extra.append(f"{item}={out}")
         ok, reason = True, f"furnace={ingots if a.mc not in FURNACE_UNTESTABLE else 'n/a (vanilla bug)'} beef={beef} {' '.join(extra)}"
         if selftest:
             reason += f"; self-test {selftest}"

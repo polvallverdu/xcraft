@@ -14,7 +14,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(Creeper.class)
 public abstract class CreeperMixin {
 
-	@Inject(method = "increaseDroppedSkulls", at = @At("HEAD"))
+	// Optional: from 26.1 the creeper no longer counts heads this way (the smoke test checks heads are still x3)
+	@Inject(method = "increaseDroppedSkulls", at = @At("HEAD"), require = 0)
 	private void xcraft$markMobHead(CallbackInfo ci) {
 		MultiplierUtil.MOB_HEAD.set(true);
 	}

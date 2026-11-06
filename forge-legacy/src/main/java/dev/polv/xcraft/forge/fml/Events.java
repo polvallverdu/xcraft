@@ -186,7 +186,7 @@ public class Events {
 				//?} else {
 				/*item.delayBeforeCanPickup = 10;
 				*///?}
-				//? if >=1.11 {
+				//? if >=1.10 {
 				worldOf(drop).spawnEntity(item);
 				//?} else {
 				/*worldOf(drop).spawnEntityInWorld(item);
