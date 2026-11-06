@@ -11,6 +11,8 @@
     "AbstractFurnaceBlockEntityAccessor",
     "BlockDropMultiplierMixin",
     "CommandsMixin",
+    "CreeperMixin",
+    "DropSpawnMixin",
     "EntityDropMultiplierMixin",
     "FurnaceSpeedMultiplierMixin",
     "WitherDropMultiplierMixin",

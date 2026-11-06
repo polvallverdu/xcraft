@@ -1,19 +1,14 @@
 package dev.polv.xcraft.mixin;
 
 import dev.polv.xcraft.MultiplierUtil;
-import dev.polv.xcraft.config.XcraftConfig;
-//? if >=1.19.3 {
-import net.minecraft.core.registries.BuiltInRegistries;
-//?} else {
-/*import net.minecraft.core.Registry;
-*///?}
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.function.Consumer;
 
@@ -59,13 +54,18 @@ public abstract class EntityDropMultiplierMixin {
 		LivingEntity self = (LivingEntity) (Object) this;
 		if (self instanceof Player) return output;
 		// Its own mobDropMultipliers entry, else hostile (Enemy: zombies, slimes, ghasts...) or passive, else mobs
-		//? if >=1.19.3 {
-		String id = String.valueOf(BuiltInRegistries.ENTITY_TYPE.getKey(self.getType()));
-		//?} else {
-		/*String id = String.valueOf(Registry.ENTITY_TYPE.getKey(self.getType()));
-		*///?}
-		int multiplier = XcraftConfig.mobMultiplier(id, self instanceof Enemy);
+		int multiplier = MultiplierUtil.mobMultiplier(self);
 		if (multiplier <= 1) return output;
-		return stack -> MultiplierUtil.multiply(stack, multiplier, output);
+		return stack -> {
+			// Loot is multiplied here: never again as a charged-creeper head (DropSpawnMixin)
+			MultiplierUtil.MOB_HEAD.set(false);
+			MultiplierUtil.multiply(stack, multiplier, output);
+		};
+	}
+
+	/** A head marked by a charged creeper but never dropped must not apply to a later drop. */
+	@Inject(method = "dropAllDeathLoot", at = @At("TAIL"))
+	private void xcraft$clearMobHead(CallbackInfo ci) {
+		MultiplierUtil.MOB_HEAD.set(false);
 	}
 }

@@ -27,6 +27,13 @@ public final class Drops {
 	public static final ThreadLocal<Boolean> MOB_LOOT = ThreadLocal.withInitial(() -> false);
 	/** Remembers MOB_LOOT while the equipment drop temporarily disables it. */
 	public static final ThreadLocal<Boolean> MOB_LOOT_PAUSED = ThreadLocal.withInitial(() -> false);
+	/**
+	 * The mob whose death code just finished. Mobs drop a head (killed by a charged creeper) or a music disc
+	 * (creeper killed by a skeleton) after it, in their own death code: those drops are loot too.
+	 */
+	public static final ThreadLocal<Object> DIED = new ThreadLocal<>();
+	/** True while the extra items of a late drop are dropped. */
+	public static final ThreadLocal<Boolean> LATE_EXTRA = ThreadLocal.withInitial(() -> false);
 
 	private Drops() {
 	}
@@ -42,13 +49,41 @@ public final class Drops {
 
 	/** A mob's drop multiplier: its mobDropMultipliers entry, else the hostile/passive multiplier, else mobs. */
 	public static int mobMultiplier(Entity entity) {
+		return Config.mobMultiplier(entityId(entity), entity instanceof Monster);
+	}
+
+	/** An id ("minecraft:zombie") from 1.11, a name ("Zombie", "FallingSand") before. */
+	public static String entityId(Entity entity) {
 		//? if >=1.13 {
-		/*String id = String.valueOf(EntityType.getKey(entity.getType()));
+		/*return String.valueOf(EntityType.getKey(entity.getType()));
 		*///?} else {
-		// An id ("minecraft:zombie") from 1.11, a name ("Zombie") before
-		String id = String.valueOf(Entities.getKey(entity));
+		return String.valueOf(Entities.getKey(entity));
 		//?}
-		return Config.mobMultiplier(id, entity instanceof Monster);
+	}
+
+	/** The item's id, e.g. "minecraft:skull" (before 1.13) or "minecraft:zombie_head". */
+	public static String itemId(ItemStack stack) {
+		//? if >=1.13.1 {
+		/*return String.valueOf(Registry.ITEM.getKey(stack.getItem()));
+		*///?} else {
+		return String.valueOf(Item.REGISTRY.getKey(stack.getItem()));
+		//?}
+	}
+
+	/**
+	 * The multiplier of a drop made outside the loot window, 1 if it is not one: a head or music disc dropped by
+	 * a mob right after its death code, or a falling dragon egg that broke (only with an explicit
+	 * blockDropMultipliers entry: one egg per world, so x1 unless asked for).
+	 */
+	public static int lateDropMultiplier(Entity entity, ItemStack stack) {
+		String id = itemId(stack);
+		if (DIED.get() == entity && (id.contains("skull") || id.endsWith("_head") || id.contains("record") || id.contains("music_disc"))) {
+			return mobMultiplier(entity);
+		}
+		if (id.endsWith("dragon_egg") && entityId(entity).toLowerCase(java.util.Locale.ROOT).contains("falling")) {
+			return Config.blockMultiplier(false, "minecraft:dragon_egg");
+		}
+		return 1;
 	}
 
 	public static boolean isOre(Block block) {

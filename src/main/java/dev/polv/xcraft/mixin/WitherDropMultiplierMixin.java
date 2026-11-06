@@ -1,12 +1,6 @@
 package dev.polv.xcraft.mixin;
 
 import dev.polv.xcraft.MultiplierUtil;
-import dev.polv.xcraft.config.XcraftConfig;
-//? if >=1.19.3 {
-import net.minecraft.core.registries.BuiltInRegistries;
-//?} else {
-/*import net.minecraft.core.Registry;
-*///?}
 //? if >=1.21.2 {
 /*import net.minecraft.server.level.ServerLevel;
 *///?}
@@ -30,12 +24,7 @@ public abstract class WitherDropMultiplierMixin {
 	@Inject(method = "dropCustomDeathLoot", at = @At("TAIL"))
 	private void xcraft$multiplyNetherStar(CallbackInfo ci) {
 		WitherBoss self = (WitherBoss) (Object) this;
-		//? if >=1.19.3 {
-		String id = String.valueOf(BuiltInRegistries.ENTITY_TYPE.getKey(self.getType()));
-		//?} else {
-		/*String id = String.valueOf(Registry.ENTITY_TYPE.getKey(self.getType()));
-		*///?}
-		int multiplier = XcraftConfig.mobMultiplier(id, true);
+		int multiplier = MultiplierUtil.mobMultiplier(self);
 		if (multiplier <= 1) return;
 		MultiplierUtil.multiply(new ItemStack(Items.NETHER_STAR), multiplier - 1, stack -> {
 			//? if >=1.21.2 {

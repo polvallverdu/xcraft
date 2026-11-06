@@ -285,6 +285,12 @@ class Rcon:
         return out
 
 
+def item_counts(item, text):
+    """The counts of every stack of `item` in /data get entity output (both the old and the 1.20.5+ format)."""
+    return [int(next(g for g in m if g)) for m in
+            re.findall(rf'{item}"?, [Cc]ount: (\d+)|[Cc]ount: (\d+)[^}}]*{item}', text)]
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--loader", required=True, choices=["fabric", "neoforge", "forge", "legacy-fabric", "ornithe"])
@@ -370,14 +376,36 @@ def main():
             # A plain /setblock furnace gets no block entity on 1.14-1.14.2; placing it with NBT does
             r.cmd('setblock ~ ~3 ~ furnace{Items:[{Slot:0b,id:"minecraft:iron_ore",Count:16b},'
                   '{Slot:1b,id:"minecraft:coal",Count:4b}],CookTimeTotal:200s}')
-        # Only our tagged cow and the items next to it: worlds can hold other drops (e.g. mineshaft loot)
+        # Drops outside the loot tables (x3 each): the Wither's nether star, a head from a charged creeper (not
+        # checked on Forge 1.13, whose own death code drops it outside Forge's captured drops) and a dragon egg
+        # broken on a torch (opt-in through its block entry; not on the Forge 1.13-1.16 build)
+        check_star = True
+        check_head = not (a.loader == "forge" and key(a.mc) < [1, 14])
+        check_egg = not (a.loader == "forge" and key(a.mc) < [1, 17])
+        r.cmd("xcraft mob wither 3")
+        r.cmd("xcraft mob zombie 3")
+        r.cmd("xcraft block dragon_egg 3")
+        r.cmd("gamerule mobGriefing false")  # the creeper must not blow up the ground under the drops
+        # Only our tagged mobs and the items next to them: worlds can hold other drops (e.g. mineshaft loot)
         r.cmd('summon cow ~ ~1 ~4 {NoAI:1b,Tags:["xcraft"]}')
+        r.cmd('summon wither ~ ~1 ~-16 {NoAI:1b,Tags:["xcraft"]}')
         time.sleep(3)
         r.cmd("kill @e[tag=xcraft]")
+        if check_head:
+            r.cmd('summon zombie ~20 ~1 ~ {NoAI:1b,PersistenceRequired:1b}')
+            r.cmd("summon creeper ~20 ~1 ~1 {powered:1b,ignited:1b,Fuse:0s}")
+        if check_egg:
+            r.cmd("setblock ~-20 ~1 ~ stone")
+            r.cmd("setblock ~-20 ~2 ~ torch")
+            # Time:1: a falling block with Time 0 and no block of its own where it was summoned removes itself
+            r.cmd('summon falling_block ~-20 ~8 ~ {BlockState:{Name:"minecraft:dragon_egg"},Time:1}')
         time.sleep(7)
         furnace = r.cmd("data get block ~ ~3 ~ Items")
         # NoAI cows don't fall; it stands right above the ground, so its drops land next to it
         items = r.cmd("execute positioned ~ ~1 ~4 as @e[type=item,distance=..8] run data get entity @s Item")
+        stars = r.cmd("execute positioned ~ ~1 ~-16 as @e[type=item,distance=..8] run data get entity @s Item") if check_star else ""
+        heads = r.cmd("execute positioned ~20 ~1 ~ as @e[type=item,distance=..10] run data get entity @s Item") if check_head else ""
+        eggs = r.cmd("execute positioned ~-20 ~2 ~ as @e[type=item,distance=..8] run data get entity @s Item") if check_egg else ""
         # forge-legacy (up to 1.16.5) also has /xcraft test, for ores (real harvest) and XP
         selftest = selftest_checks(r, a.mc) if a.loader == "forge" and key(a.mc) < [1, 17] else None
         r.cmd("xcraft reload")
@@ -391,7 +419,17 @@ def main():
             raise RuntimeError(f"furnace not sped up (iron_ingot={ingots})")
         if not beef or any(b % 3 for b in beef):
             raise RuntimeError(f"mob drops not multiplied (beef={beef})")
-        ok, reason = True, f"furnace={ingots if a.mc not in FURNACE_UNTESTABLE else 'n/a (vanilla bug)'} beef={beef}"
+        extra = []
+        for name, item, out, checked in (("nether stars", "nether_star", stars, check_star),
+                                          ("zombie heads", "zombie_head", heads, check_head),
+                                          ("dragon eggs", "dragon_egg", eggs, check_egg)):
+            if not checked:
+                continue
+            total = sum(item_counts(item, out))
+            if total != 3:
+                raise RuntimeError(f"{name} not multiplied (expected 3, got {total}): {out[:300]}")
+            extra.append(f"{item}={total}")
+        ok, reason = True, f"furnace={ingots if a.mc not in FURNACE_UNTESTABLE else 'n/a (vanilla bug)'} beef={beef} {' '.join(extra)}"
         if selftest:
             reason += f"; self-test {selftest}"
     except StopIteration:
