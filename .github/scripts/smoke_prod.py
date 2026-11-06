@@ -285,6 +285,22 @@ class Rcon:
         return out
 
 
+def total_items(r, mc, item, pos, radius=10):
+    """How many `item`s lie on the ground around `pos`, summed over a scoreboard: every command here replies with
+    one line (RCON can return only part of a multi-entity reply, and Forge's hangs on a command with no reply)."""
+    sel = f'@e[type=item,distance=..{radius},nbt={{Item:{{id:"minecraft:{item}"}}}}]'
+    found = re.search(r"[Cc]ount: (\d+)", r.cmd(f"execute positioned {pos} if entity {sel}"))
+    if not found:
+        return 0
+    field = "count" if key(mc) >= [1, 20, 5] else "Count"
+    r.cmd("scoreboard objectives add xcraft dummy")
+    r.cmd("scoreboard players set #total xcraft 0")
+    r.cmd(f"execute positioned {pos} as {sel} store result score @s xcraft run data get entity @s Item.{field}")
+    r.cmd(f"execute positioned {pos} run scoreboard players operation #total xcraft += {sel} xcraft")
+    total = re.search(r"has (\d+)", r.cmd("scoreboard players get #total xcraft"))
+    return int(total.group(1)) if total else -1
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--loader", required=True, choices=["fabric", "neoforge", "forge", "legacy-fabric", "ornithe"])
@@ -360,7 +376,8 @@ def main():
             r.cmd("stop")
             ok = True
             raise StopIteration
-        r.cmd("forceload add ~ ~")  # 1.21.9+ no longer keeps spawn chunks loaded
+        # 1.21.9+ no longer keeps spawn chunks loaded (and 1.20.5+ ticks fewer of them): every test spot ticks
+        r.cmd("forceload add ~-24 ~-24 ~24 ~24")
         time.sleep(2)
         if key(a.mc) >= [1, 17]:
             r.cmd("setblock ~ ~3 ~ furnace")
@@ -370,14 +387,37 @@ def main():
             # A plain /setblock furnace gets no block entity on 1.14-1.14.2; placing it with NBT does
             r.cmd('setblock ~ ~3 ~ furnace{Items:[{Slot:0b,id:"minecraft:iron_ore",Count:16b},'
                   '{Slot:1b,id:"minecraft:coal",Count:4b}],CookTimeTotal:200s}')
-        # Only our tagged cow and the items next to it: worlds can hold other drops (e.g. mineshaft loot)
+        # Drops outside the loot tables (x3 each): the Wither's nether star, a head from a charged creeper (not
+        # checked on Forge 1.13, whose own death code drops it outside Forge's captured drops) and a dragon egg
+        # broken on a torch (opt-in through its block entry; not on the Forge 1.13-1.16 build)
+        check_star = True
+        check_head = not (a.loader == "forge" and key(a.mc) < [1, 14])
+        check_egg = not (a.loader == "forge" and key(a.mc) < [1, 17])
+        r.cmd("xcraft mob wither 3")
+        r.cmd("xcraft mob zombie 3")
+        r.cmd("xcraft block dragon_egg 3")
+        # The creeper must not blow up the ground under the drops (the rule is mob_griefing from 26.3)
+        r.cmd("gamerule mobGriefing false" if key(a.mc) < [26, 3] else "gamerule mob_griefing false")
+        # Only our tagged mobs and the items next to them: worlds can hold other drops (e.g. mineshaft loot)
         r.cmd('summon cow ~ ~1 ~4 {NoAI:1b,Tags:["xcraft"]}')
+        r.cmd('summon wither ~ ~1 ~-16 {NoAI:1b,Tags:["xcraft"]}')
         time.sleep(3)
         r.cmd("kill @e[tag=xcraft]")
+        if check_head:
+            r.cmd('summon zombie ~20 ~1 ~ {NoAI:1b,PersistenceRequired:1b}')
+            r.cmd("summon creeper ~20 ~1 ~1 {powered:1b,ignited:1b,Fuse:0s}")
+        if check_egg:
+            r.cmd("setblock ~-20 ~1 ~ stone")
+            r.cmd("setblock ~-20 ~2 ~ torch")
+            # A placed dragon egg falls by itself (no falling_block NBT: 26.3 no longer reads BlockState)
+            r.cmd("setblock ~-20 ~8 ~ dragon_egg")
         time.sleep(7)
         furnace = r.cmd("data get block ~ ~3 ~ Items")
         # NoAI cows don't fall; it stands right above the ground, so its drops land next to it
         items = r.cmd("execute positioned ~ ~1 ~4 as @e[type=item,distance=..8] run data get entity @s Item")
+        stars = total_items(r, a.mc, "nether_star", "~ ~1 ~-16") if check_star else 0
+        heads = total_items(r, a.mc, "zombie_head", "~20 ~1 ~") if check_head else 0
+        eggs = total_items(r, a.mc, "dragon_egg", "~-20 ~2 ~") if check_egg else 0
         # forge-legacy (up to 1.16.5) also has /xcraft test, for ores (real harvest) and XP
         selftest = selftest_checks(r, a.mc) if a.loader == "forge" and key(a.mc) < [1, 17] else None
         r.cmd("xcraft reload")
@@ -391,7 +431,16 @@ def main():
             raise RuntimeError(f"furnace not sped up (iron_ingot={ingots})")
         if not beef or any(b % 3 for b in beef):
             raise RuntimeError(f"mob drops not multiplied (beef={beef})")
-        ok, reason = True, f"furnace={ingots if a.mc not in FURNACE_UNTESTABLE else 'n/a (vanilla bug)'} beef={beef}"
+        extra = []
+        for name, item, out, checked in (("nether stars", "nether_star", stars, check_star),
+                                          ("zombie heads", "zombie_head", heads, check_head),
+                                          ("dragon eggs", "dragon_egg", eggs, check_egg)):
+            if not checked:
+                continue
+            if out != 3:
+                raise RuntimeError(f"{name} not multiplied (expected 3, got {out})")
+            extra.append(f"{item}={out}")
+        ok, reason = True, f"furnace={ingots if a.mc not in FURNACE_UNTESTABLE else 'n/a (vanilla bug)'} beef={beef} {' '.join(extra)}"
         if selftest:
             reason += f"; self-test {selftest}"
     except StopIteration:

@@ -26,6 +26,12 @@ public abstract class LivingEntityMixin {
 		Drops.MOB_LOOT.set(false);
 	}
 
+	// Heads (charged creeper) and music discs (creeper killed by a skeleton) are dropped right after this
+	@Inject(method = "die", at = @At("RETURN"))
+	private void xcraft$afterDeath(CallbackInfo ci) {
+		if (!((Object) this instanceof PlayerEntity)) Drops.DIED.set(this);
+	}
+
 	// The equipment drop runs inside the loot method; keep it unmultiplied
 	@Inject(method = "dropItemsFromLootTable", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/living/LivingEntity;dropEquipment(ZI)V"))
 	private void xcraft$pauseForEquipment(CallbackInfo ci) {

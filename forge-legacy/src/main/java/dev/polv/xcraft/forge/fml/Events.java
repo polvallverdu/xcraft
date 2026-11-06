@@ -12,6 +12,8 @@ import net.minecraft.entity.monster.IMob;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Items;
 import net.minecraft.item.Item;
+import net.minecraft.item.ItemRecord;
+import net.minecraft.item.ItemSkull;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.tileentity.TileEntityFurnace;
@@ -121,6 +123,86 @@ public class Events {
 			}
 		}
 		drops.addAll(extra);
+	}
+
+	/**
+	 * The mob that just dropped its death loot, and those drops. A mob drops a head (killed by a charged creeper) or
+	 * a music disc (creeper killed by a skeleton) right after, in its own death code, where Forge no longer
+	 * captures drops: onLateDrop multiplies those.
+	 */
+	private EntityLivingBase died;
+	private final List<EntityItem> diedDrops = new ArrayList<EntityItem>();
+	private boolean spawningExtra;
+
+	@SubscribeEvent(priority = EventPriority.LOWEST)
+	public void onDeathDropsDone(LivingDropsEvent event) {
+		//? if >=1.9 {
+		EntityLivingBase entity = event.getEntityLiving();
+		List<EntityItem> drops = event.getDrops();
+		//?} else {
+		/*EntityLivingBase entity = event.entityLiving;
+		List<EntityItem> drops = event.drops;
+		*///?}
+		diedDrops.clear();
+		if (entity instanceof EntityPlayer) {
+			died = null;
+			return;
+		}
+		died = entity;
+		diedDrops.addAll(drops);
+	}
+
+	/** A head or music disc dropped by the mob that just died, right where it died (outside its captured drops). */
+	@SubscribeEvent(priority = EventPriority.HIGH)
+	public void onLateDrop(EntityJoinWorldEvent event) {
+		//? if >=1.9 {
+		Object entity = event.getEntity();
+		//?} else {
+		/*Object entity = event.entity;
+		*///?}
+		if (spawningExtra || died == null || !(entity instanceof EntityItem)) return;
+		EntityItem drop = (EntityItem) entity;
+		for (EntityItem captured : diedDrops) if (captured == drop) return;
+		if (died.isDead || died.getHealth() > 0 || worldOf(drop) != worldOf(died)) return;
+		if (Math.abs(drop.posX - died.posX) > 1.0E-3 || Math.abs(drop.posZ - died.posZ) > 1.0E-3) return;
+		if (drop.posY < died.posY - 1.0E-3 || drop.posY > died.posY + 3) return;
+		ItemStack stack = itemOf(drop);
+		if (empty(stack) || !(stack.getItem() instanceof ItemSkull || stack.getItem() instanceof ItemRecord)) return;
+		int multiplier = Config.mobMultiplier(EntityList.getEntityString(died), died instanceof IMob);
+		if (multiplier <= 1) return;
+		int[] parts = Xcraft.split(count(stack), multiplier, stack.getMaxStackSize());
+		Xcraft.debug("late drop x" + multiplier + ": " + count(stack) + " -> " + count(stack) * multiplier);
+		ItemStack first = stack.copy();
+		setCount(first, parts[0]);
+		setItem(drop, first);
+		spawningExtra = true;
+		try {
+			for (int i = 1; i < parts.length; i++) {
+				ItemStack copy = stack.copy();
+				setCount(copy, parts[i]);
+				EntityItem item = new EntityItem(worldOf(drop), drop.posX, drop.posY, drop.posZ, copy);
+				//? if >=1.8 {
+				item.setDefaultPickupDelay();
+				//?} else {
+				/*item.delayBeforeCanPickup = 10;
+				*///?}
+				//? if >=1.10 {
+				worldOf(drop).spawnEntity(item);
+				//?} else {
+				/*worldOf(drop).spawnEntityInWorld(item);
+				*///?}
+			}
+		} finally {
+			spawningExtra = false;
+		}
+	}
+
+	private static World worldOf(EntityLivingBase entity) {
+		//? if >=1.10 {
+		return entity.world;
+		//?} else {
+		/*return entity.worldObj;
+		*///?}
 	}
 
 	/** /xcraft test: records the item entities its scenarios drop (after xCraft multiplied them). */
